@@ -20,13 +20,14 @@ def get_version():
 setup(
     name="csm",
     version=get_version(),
-    description="The official Python library for the csm API",
+    description="The official Python library for the CSM API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Common Sense Machines",
     author_email="support@csm.ai",
     url="https://docs.csm.ai",
     packages=find_packages('./src'),
+    package_dir={'': 'src'},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
