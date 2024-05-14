@@ -1,4 +1,6 @@
 import os
+import time
+from urllib.request import urlretrieve
 import requests
 
 
@@ -102,7 +104,7 @@ class BackendClient:
         response = requests.post(
             url=os.path.join(self.base_url, "image-to-3d-sessions", "get-3d", "preview", session_code),
             json=parameters,
-            headers=self._headers,
+            headers=self.headers,
             timeout=100,
         )
 
@@ -117,4 +119,75 @@ class CSMClient:
         ):
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
-    
+    def image_to_3d(self, image_url, diffusion_time_steps=75, output='./', 
+                    timeout=200, verbose=False):
+        os.makedirs(output, exist_ok=True)
+        # TODO: use os.path.abspath ?
+        spin_mp4 = os.path.join(output, 'spin.mp4')
+        mesh_obj_zip = os.path.join(output, 'mesh.zip')
+        mesh_glb = os.path.join(output, 'mesh.glb')
+        mesh_usdz = os.path.join(output, 'mesh.usdz')
+
+        # initialize session
+        result = self.backend.create_session(
+            image_url,
+            preview_mesh="turbo",
+            diffusion_time_steps=diffusion_time_steps,
+            auto_gen_3d=False,
+        )
+        session_code = result['data']['session_code']
+
+        # wait for preview spin generation to complete (20-30s)
+        start_time = time.time()
+        while True:
+            time.sleep(2)
+            result = self.backend.get_session_info(session_code)
+            if result['data']['status'] == 'spin_generate_done':
+                break
+            run_time = time.time() - start_time
+            if run_time >= timeout:
+                raise RuntimeError("Preview spin generation timed out")
+        
+        if verbose:
+            print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
+
+        selected_spin_index = 1
+        selected_spin_url = result['data']['spins'][selected_spin_index]["image_url"]
+        urlretrieve(selected_spin_url, spin_mp4)
+
+        # launch preview mesh export
+        result = self.backend.get_3d_preview(
+            session_code,
+            selected_spin_index=selected_spin_index,
+            selected_spin_url=selected_spin_url,
+        )
+
+        # wait for preview mesh export to complete (20-30s)
+        start_time = time.time()
+        while True:
+            time.sleep(2)
+            result = self.backend.get_session_info(session_code)
+            if result['data']['status'] == 'preview_done':
+                break
+            run_time = time.time() - start_time
+            if run_time >= timeout:
+                raise RuntimeError("Preview mesh export timed out")
+            
+        if verbose:
+            print(f'[INFO] Preview mesh export completed in {run_time:.1f}s')
+
+        urlretrieve(result['data']['preview_mesh_url_zip'], mesh_obj_zip)
+        urlretrieve(result['data']['preview_mesh_url_glb'], mesh_glb)
+        urlretrieve(result['data']['preview_mesh_url_usdz'], mesh_usdz)
+
+        return spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz
+
+    def text_to_3d(
+            self, 
+            text_prompt, 
+            diffusion_time_steps=75, 
+            output='./', 
+            timeout=200, 
+            verbose=False
+        ):
+        raise NotImplementedError("text-to-3d is not yet implemented.")
