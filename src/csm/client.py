@@ -158,16 +158,15 @@ class CSMClient:
             self,
             image_url,
             diffusion_time_steps=75,
+            mesh_format='obj',
             output='./',
             timeout=200,
             verbose=False,
         ):
+        mesh_format = mesh_format.lower()
+        assert mesh_format in ['obj', 'glb', 'usdz']
+
         os.makedirs(output, exist_ok=True)
-        # TODO: use os.path.abspath ?
-        spin_mp4 = os.path.join(output, 'spin.mp4')
-        mesh_obj_zip = os.path.join(output, 'mesh.zip')
-        mesh_glb = os.path.join(output, 'mesh.glb')
-        mesh_usdz = os.path.join(output, 'mesh.usdz')
 
         # initialize session
         result = self.backend.create_image_to_3d_session(
@@ -200,7 +199,10 @@ class CSMClient:
         # TODO: API option for a single generation (vs. batch of 4)
         selected_spin_index = 1
         selected_spin_url = result['data']['spins'][selected_spin_index]["image_url"]
-        urlretrieve(selected_spin_url, spin_mp4)
+
+        # download spin video
+        spin_path = os.path.join(output, 'spin.mp4')
+        urlretrieve(selected_spin_url, spin_path)
 
         # launch preview mesh export
         result = self.backend.get_3d_preview(
@@ -223,11 +225,24 @@ class CSMClient:
         if verbose:
             print(f'[INFO] Preview mesh export completed in {run_time:.1f}s')
 
-        urlretrieve(result['data']['preview_mesh_url_zip'], mesh_obj_zip)
-        urlretrieve(result['data']['preview_mesh_url_glb'], mesh_glb)
-        urlretrieve(result['data']['preview_mesh_url_usdz'], mesh_usdz)
+        # download mesh file based on the requested format
+        if mesh_format == 'obj':
+            mesh_url = result['data']['preview_mesh_url_zip']
+            mesh_file = 'mesh.zip'
+        elif mesh_format == 'glb':
+            mesh_url = result['data']['preview_mesh_url_glb']
+            mesh_file = 'mesh.glb'
+        elif mesh_format == 'usdz':
+            mesh_url = result['data']['preview_mesh_url_usdz']
+            mesh_file = 'mesh.usdz'
+        else:
+            raise ValueError(f"Encountered unexpected mesh_format value ('{mesh_format}').")
 
-        return spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz
+        mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
+
+        urlretrieve(mesh_url, mesh_path)
+
+        return spin_path, mesh_path
 
     def text_to_3d(
             self,
@@ -235,12 +250,12 @@ class CSMClient:
             style_id="",
             guidance=6,
             diffusion_time_steps=75,
+            mesh_format='obj',
             output='./',
             timeout=200,
             verbose=False,
         ):
         os.makedirs(output, exist_ok=True)
-        image_png = os.path.join(output, 'image.png')
 
         # initialize text-to-image session
         result = self.backend.create_text_to_image_session(
@@ -269,17 +284,21 @@ class CSMClient:
         if verbose:
             print(f'[INFO] Text-to-image generation completed in {run_time:.1f}s')
 
-        # access the image URL and download image
+        # access the image URL
         image_url = result['data']['image_url']
-        urlretrieve(image_url, image_png)
+
+        # download image
+        image_path = os.path.join(output, 'image.png')
+        urlretrieve(image_url, image_path)
 
         # launch image-to-3d
-        spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz = self.image_to_3d(
+        spin_path, mesh_path = self.image_to_3d(
             image_url,
             diffusion_time_steps=diffusion_time_steps,
+            mesh_format=mesh_format,
             output=output,
             timeout=timeout,
             verbose=verbose
         )
 
-        return image_png, spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz
+        return image_path, spin_path, mesh_path
