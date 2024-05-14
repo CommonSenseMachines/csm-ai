@@ -74,7 +74,7 @@ class BackendClient:
 
         return response.json()
     
-    def get_session_info(self, session_code):
+    def get_image_to_3d_session_info(self, session_code):
         response = requests.get(
             url=os.path.join(self.base_url, "image-to-3d-sessions", session_code),
             headers=self.headers,
@@ -92,7 +92,7 @@ class BackendClient:
     
     def get_3d_preview(self, session_code, selected_spin_index=0, selected_spin_url=None):
         if selected_spin_url:
-            data = self.get_session_info(session_code)['data']
+            data = self.get_image_to_3d_session_info(session_code)['data']
             spins = data['spins']
             selected_spin_url = spins[selected_spin_index]["image_url"]
 
@@ -147,7 +147,7 @@ class CSMClient:
         start_time = time.time()
         while True:
             time.sleep(2)
-            result = self.backend.get_session_info(session_code)
+            result = self.backend.get_image_to_3d_session_info(session_code)
             if result['data']['status'] == 'spin_generate_done':
                 break
             run_time = time.time() - start_time
@@ -173,7 +173,7 @@ class CSMClient:
         start_time = time.time()
         while True:
             time.sleep(2)
-            result = self.backend.get_session_info(session_code)
+            result = self.backend.get_image_to_3d_session_info(session_code)
             if result['data']['status'] == 'preview_done':
                 break
             run_time = time.time() - start_time
