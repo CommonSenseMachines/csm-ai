@@ -27,7 +27,7 @@ class BackendClient:
             'x-api-key': self.api_key,
         }
 
-    def create_session(
+    def create_image_to_3d_session(
             self,
             image_url,
             *,
@@ -119,8 +119,14 @@ class CSMClient:
         ):
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
-    def image_to_3d(self, image_url, diffusion_time_steps=75, output='./', 
-                    timeout=200, verbose=False):
+    def image_to_3d(
+            self,
+            image_url,
+            diffusion_time_steps=75,
+            output='./',
+            timeout=200,
+            verbose=False,
+        ):
         os.makedirs(output, exist_ok=True)
         # TODO: use os.path.abspath ?
         spin_mp4 = os.path.join(output, 'spin.mp4')
@@ -129,7 +135,7 @@ class CSMClient:
         mesh_usdz = os.path.join(output, 'mesh.usdz')
 
         # initialize session
-        result = self.backend.create_session(
+        result = self.backend.create_image_to_3d_session(
             image_url,
             preview_mesh="turbo",
             diffusion_time_steps=diffusion_time_steps,
@@ -151,6 +157,7 @@ class CSMClient:
         if verbose:
             print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
 
+        # TODO: API option for a single generation (vs. batch of 4)
         selected_spin_index = 1
         selected_spin_url = result['data']['spins'][selected_spin_index]["image_url"]
         urlretrieve(selected_spin_url, spin_mp4)
