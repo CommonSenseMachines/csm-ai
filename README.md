@@ -12,14 +12,29 @@ pip install git+https://github.com/CommonSenseMachines/csm-python.git
 
 ## Usage
 
-Quick start basic usage example:
+Initialize the API client:
 
 ```python
 from csm import CSMClient
 
 csm_client = CSMClient(api_key='6bCfF4467bXXXXXX4E6B271BeC5')
+```
 
+Run an `image-to-3d` job:
+
+```python
 image_url = "https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png"
 
 spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz = csm_client.image_to_3d(image_url)
+```
+
+Run a `text-to-3d` job:
+
+```python
+
+prompt = "3d asset of a character head, cartoon style, low poly, front view"
+
+image_png, spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz = \
+        csm_client.text_to_3d(prompt, output='tti-output', verbose=True)
+
 ```

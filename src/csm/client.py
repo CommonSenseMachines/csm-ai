@@ -27,6 +27,9 @@ class BackendClient:
             'x-api-key': self.api_key,
         }
 
+    # image-to-3d API
+    # -------------------------------------------
+
     def create_image_to_3d_session(
             self,
             image_url,
@@ -43,8 +46,7 @@ class BackendClient:
             topology="tris",
             texture_resolution=2048,
         ):
-        """
-        e.g. image_url='https://via.placeholder.com/300/09f/fff.png'  
+        """Initialize an image-to-3d session.
         """
         assert preview_mesh in ["turbo", "hd"]
         assert 16 <= diffusion_time_steps <= 200
@@ -73,7 +75,7 @@ class BackendClient:
         )
 
         return response.json()
-    
+
     def get_image_to_3d_session_info(self, session_code):
         response = requests.get(
             url=os.path.join(self.base_url, "image-to-3d-sessions", session_code),
@@ -106,6 +108,39 @@ class BackendClient:
             json=parameters,
             headers=self.headers,
             timeout=100,
+        )
+
+        return response.json()
+
+    # text-to-image API methods
+    # -------------------------------------------
+
+    def create_text_to_image_session(
+            self,
+            prompt,
+            style_id="",
+            guidance=6,
+        ):
+        """Initialize a text-to-image session.
+        """
+        parameters = {
+            'prompt': str(prompt),
+            'style_id': str(style_id),
+            'guidance': str(guidance),
+        }
+
+        response = requests.post(
+            url=os.path.join(self.base_url, "tti-sessions"),
+            json=parameters,
+            headers=self.headers,
+        )
+
+        return response.json()
+
+    def get_text_to_image_session_info(self, session_code):
+        response = requests.get(
+            url=os.path.join(self.base_url, "tti-sessions", session_code),
+            headers=self.headers,
         )
 
         return response.json()
@@ -143,6 +178,10 @@ class CSMClient:
         )
         session_code = result['data']['session_code']
 
+        if verbose:
+            print(f'[INFO] Image-to-3d session created ({session_code})')
+            print(f'[INFO] Running preview spin generation...')
+
         # wait for preview spin generation to complete (20-30s)
         start_time = time.time()
         while True:
@@ -156,6 +195,7 @@ class CSMClient:
         
         if verbose:
             print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
+            print(f'[INFO] Running preview mesh export...')
 
         # TODO: API option for a single generation (vs. batch of 4)
         selected_spin_index = 1
@@ -190,11 +230,56 @@ class CSMClient:
         return spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz
 
     def text_to_3d(
-            self, 
-            text_prompt, 
-            diffusion_time_steps=75, 
-            output='./', 
-            timeout=200, 
-            verbose=False
+            self,
+            prompt,
+            style_id="",
+            guidance=6,
+            diffusion_time_steps=75,
+            output='./',
+            timeout=200,
+            verbose=False,
         ):
-        raise NotImplementedError("text-to-3d is not yet implemented.")
+        os.makedirs(output, exist_ok=True)
+        image_png = os.path.join(output, 'image.png')
+
+        # initialize text-to-image session
+        result = self.backend.create_text_to_image_session(
+            prompt,
+            style_id=style_id,
+            guidance=guidance,
+        )
+        session_code = result['data']['session_code']
+
+        if verbose:
+            print(f'[INFO] Text-to-image session created ({session_code})')
+            print(f'[INFO] Running text-to-image generation...')
+
+        # wait for image generation to complete
+        start_time = time.time()
+        while True:
+            time.sleep(2)
+            result = self.backend.get_text_to_image_session_info(session_code)
+            if result['data']['status'] == 'completed':
+                break
+            # assert result['data']['status'] == 'processing'  # TODO
+            run_time = time.time() - start_time
+            if run_time >= timeout:
+                raise RuntimeError("Text-to-image generation timed out")
+
+        if verbose:
+            print(f'[INFO] Text-to-image generation completed in {run_time:.1f}s')
+
+        # access the image URL and download image
+        image_url = result['data']['image_url']
+        urlretrieve(image_url, image_png)
+
+        # launch image-to-3d
+        spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz = self.image_to_3d(
+            image_url,
+            diffusion_time_steps=diffusion_time_steps,
+            output=output,
+            timeout=timeout,
+            verbose=verbose
+        )
+
+        return image_png, spin_mp4, mesh_obj_zip, mesh_glb, mesh_usdz
