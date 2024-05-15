@@ -5,10 +5,6 @@ from setuptools import find_packages, setup
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-# Get requirements from requirements.txt. TODO: remove this
-with open("requirements.txt", "r", encoding="utf-8") as f:
-    requirements = [line.strip() for line in f.readlines()]
-
 # Function to read the version from version.py
 def get_version():
     version = {}
@@ -32,5 +28,7 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
     ],
-    install_requires=requirements,
+    install_requires=[
+        'requests',
+    ],
 )
