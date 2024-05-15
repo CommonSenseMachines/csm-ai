@@ -159,7 +159,6 @@ class CSMClient:
 
     def _handle_image_input(self, image):
         if isinstance(image, str):
-            print(f'input image: {image}')
             if os.path.isfile(image):  # local file path
                 image_path = image
                 pil_image = Image.open(image_path)
