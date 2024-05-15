@@ -2,6 +2,9 @@ import os
 import time
 from urllib.request import urlretrieve
 import requests
+import base64
+from io import BytesIO
+from PIL import Image
 
 
 class BackendClient:
@@ -154,9 +157,25 @@ class CSMClient:
         ):
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
+    def _handle_image_input(self, image):
+        if isinstance(image, str):
+            print(f'input image: {image}')
+            if os.path.isfile(image):  # local file path
+                image_path = image
+                pil_image = Image.open(image_path)
+            else:  # URL for a web file
+                image_url = image
+                return image_url  # TODO: verify that this is a valid URL
+        elif isinstance(image, Image.Image):
+            pil_image = image
+        else:
+            raise ValueError(f"Encountered unexpected type for the input image.")
+        
+        return pil_image_to_x64(pil_image)
+
     def image_to_3d(
             self,
-            image_url,
+            image,
             diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
@@ -165,6 +184,8 @@ class CSMClient:
         ):
         mesh_format = mesh_format.lower()
         assert mesh_format in ['obj', 'glb', 'usdz']
+
+        image_url = self._handle_image_input(image)
 
         os.makedirs(output, exist_ok=True)
 
@@ -302,3 +323,11 @@ class CSMClient:
         )
 
         return image_path, spin_path, mesh_path
+
+
+def pil_image_to_x64(image: Image.Image) -> str:
+    """PIL.Image.Image to base64"""
+    buffer = BytesIO()
+    image.save(buffer, "PNG")
+    x64 = buffer.getvalue()
+    return 'data:image/png;base64,' + base64.b64encode(x64).decode("utf-8")
