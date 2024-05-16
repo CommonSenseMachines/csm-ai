@@ -182,7 +182,11 @@ class CSMClient:
             verbose=False,
         ):
         mesh_format = mesh_format.lower()
-        assert mesh_format in ['obj', 'glb', 'usdz']
+        if mesh_format not in ['obj', 'glb', 'usdz']:
+            raise ValueError(
+                f"Unexpected mesh_format value ('{mesh_format}'). Please choose "
+                f"from options ['obj', 'glb', 'usdz']."
+            )
 
         image_url = self._handle_image_input(image)
 
@@ -195,6 +199,11 @@ class CSMClient:
             diffusion_time_steps=diffusion_time_steps,
             auto_gen_3d=False,
         )
+
+        status = result['data']['status']
+        if status != "spin_generate_processing":
+            raise RuntimeError(f"Image-to-3d session creation failed (status='{status}')")
+
         session_code = result['data']['session_code']
 
         if verbose:
@@ -203,11 +212,17 @@ class CSMClient:
 
         # wait for preview spin generation to complete (20-30s)
         start_time = time.time()
+        run_time = 0.
         while True:
             time.sleep(2)
             result = self.backend.get_image_to_3d_session_info(session_code)
-            if result['data']['status'] == 'spin_generate_done':
+            status = result['data']['status']
+            if status == 'spin_generate_done':
                 break
+            elif status == 'spin_generate_failed':
+                raise RuntimeError("Preview spin generation failed")
+            else:
+                assert status == 'spin_generate_processing', f"status='{status}'"
             run_time = time.time() - start_time
             if run_time >= timeout:
                 raise RuntimeError("Preview spin generation timed out")
@@ -233,11 +248,17 @@ class CSMClient:
 
         # wait for preview mesh export to complete (20-30s)
         start_time = time.time()
+        run_time = 0.
         while True:
             time.sleep(2)
             result = self.backend.get_image_to_3d_session_info(session_code)
-            if result['data']['status'] == 'preview_done':
+            status = result['data']['status']
+            if status == 'preview_done':
                 break
+            elif status == 'preview_failed':
+                raise RuntimeError("Preview mesh export failed.")
+            elif status != 'training_preview':
+                raise RuntimeError(f"Unexpected error during preview mesh export (status='{status}')")
             run_time = time.time() - start_time
             if run_time >= timeout:
                 raise RuntimeError("Preview mesh export timed out")
@@ -283,6 +304,11 @@ class CSMClient:
             style_id=style_id,
             guidance=guidance,
         )
+
+        status = result['data']['status']
+        if status != "processing":
+            raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
+
         session_code = result['data']['session_code']
 
         if verbose:
@@ -291,12 +317,15 @@ class CSMClient:
 
         # wait for image generation to complete
         start_time = time.time()
+        run_time = 0.
         while True:
             time.sleep(2)
             result = self.backend.get_text_to_image_session_info(session_code)
-            if result['data']['status'] == 'completed':
+            status = result['data']['status']
+            if status == 'completed':
                 break
-            # assert result['data']['status'] == 'processing'  # TODO
+            elif status != 'processing':
+                raise RuntimeError(f"Unexpected error during text-to-image generation (status='{status}')")
             run_time = time.time() - start_time
             if run_time >= timeout:
                 raise RuntimeError("Text-to-image generation timed out")
