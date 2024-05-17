@@ -95,15 +95,16 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_preview(self, session_code, selected_spin_index=0, selected_spin_url=None):
-        if selected_spin_url:
-            data = self.get_image_to_3d_session_info(session_code)['data']
-            spins = data['spins']
-            selected_spin_url = spins[selected_spin_index]["image_url"]
+    def get_3d_preview(self, session_code, spin_url=None):
+        selected_spin_index = 0
+
+        if spin_url is None:
+            result = self.get_image_to_3d_session_info(session_code)
+            spin_url = result['data']['spins'][selected_spin_index]["image_url"]
 
         parameters = {
             "selected_spin_index": selected_spin_index,
-            "selected_spin": selected_spin_url,
+            "selected_spin": spin_url,
         }
 
         response = requests.post(
@@ -231,19 +232,17 @@ class CSMClient:
             print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
             print(f'[INFO] Running preview mesh export...')
 
-        # TODO: API option for a single generation (vs. batch of 4)
-        selected_spin_index = 1
-        selected_spin_url = result['data']['spins'][selected_spin_index]["image_url"]
+        # TODO: API option to skip spin rendering and go straight to mesh
+        spin_url = result['data']['spins'][0]["image_url"]
 
         # download spin video
         spin_path = os.path.join(output, 'spin.mp4')
-        urlretrieve(selected_spin_url, spin_path)
+        urlretrieve(spin_url, spin_path)
 
         # launch preview mesh export
         result = self.backend.get_3d_preview(
             session_code,
-            selected_spin_index=selected_spin_index,
-            selected_spin_url=selected_spin_url,
+            spin_url=spin_url,
         )
 
         # wait for preview mesh export to complete (20-30s)
