@@ -72,7 +72,7 @@ class BackendClient:
         }
 
         response = requests.post(
-            url=os.path.join(self.base_url, "image-to-3d-sessions"),
+            url=f"{self.base_url}/image-to-3d-sessions",
             json=parameters,
             headers=self.headers,
         )
@@ -81,7 +81,7 @@ class BackendClient:
 
     def get_image_to_3d_session_info(self, session_code):
         response = requests.get(
-            url=os.path.join(self.base_url, "image-to-3d-sessions", session_code),
+            url=f"{self.base_url}/image-to-3d-sessions/{session_code}",
             headers=self.headers,
         )
 
@@ -89,7 +89,7 @@ class BackendClient:
     
     def get_3d_refine(self, session_code):
         response = requests.post(
-            url=os.path.join(self.base_url, "image-to-3d-sessions", "get-3d", "refine", session_code),
+            url=f"{self.base_url}/image-to-3d-sessions/get-3d/refine/{session_code}",
             headers=self.headers,
         )
 
@@ -107,7 +107,7 @@ class BackendClient:
         }
 
         response = requests.post(
-            url=os.path.join(self.base_url, "image-to-3d-sessions", "get-3d", "preview", session_code),
+            url=f"{self.base_url}/image-to-3d-sessions/get-3d/preview/{session_code}",
             json=parameters,
             headers=self.headers,
             timeout=100,
@@ -133,7 +133,7 @@ class BackendClient:
         }
 
         response = requests.post(
-            url=os.path.join(self.base_url, "tti-sessions"),
+            url=f"{self.base_url}/tti-sessions",
             json=parameters,
             headers=self.headers,
         )
@@ -142,7 +142,7 @@ class BackendClient:
 
     def get_text_to_image_session_info(self, session_code):
         response = requests.get(
-            url=os.path.join(self.base_url, "tti-sessions", session_code),
+            url=f"{self.base_url}/tti-sessions/{session_code}",
             headers=self.headers,
         )
 
