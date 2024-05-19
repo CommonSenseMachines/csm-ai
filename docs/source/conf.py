@@ -10,9 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../src'))
 
 
 # -- Project information -----------------------------------------------------
@@ -31,6 +31,16 @@ release = '0.0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    #'sphinx.ext.doctest',
+    #'sphinx.ext.intersphinx',
+    #'sphinx.ext.todo',
+    #'sphinx.ext.coverage',
+    #'sphinx.ext.mathjax',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    #'sphinx.ext.autosectionlabel',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -41,6 +51,18 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# Set autodoc default options
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    #'private-members': True,
+    #'special-members': '__init__',
+    #'inherited-members': True,
+    #'show-inheritance': True,
+}
+
+# Automatically generate the documentation for all submodules
+autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------------
 
