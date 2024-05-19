@@ -38,6 +38,7 @@ class BackendClient:
             image_url,
             *,
             preview_mesh="turbo",
+            generate_preview_mesh=False,
             #manual_segmentation=False,
             auto_gen_3d=False,
             ## preview args (turbo)
@@ -62,6 +63,7 @@ class BackendClient:
         parameters = {
             "image_url": image_url,
             "preview_mesh": preview_mesh,
+            "generate_preview_mesh": generate_preview_mesh,
             "pixel_alignment": pixel_alignment,
             "model_resolution": model_resolution,
             "resolution": polygon_count,
@@ -176,6 +178,7 @@ class CSMClient:
     def image_to_3d(
             self,
             image,
+            generate_spin_video=False,  # TODO: deprecate this option
             diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
@@ -197,53 +200,59 @@ class CSMClient:
         result = self.backend.create_image_to_3d_session(
             image_url,
             preview_mesh="turbo",
+            generate_preview_mesh=not generate_spin_video,
             diffusion_time_steps=diffusion_time_steps,
             auto_gen_3d=False,
         )
 
         status = result['data']['status']
-        if status != "spin_generate_processing":
+        if (generate_spin_video and status != "spin_generate_processing") or (not generate_spin_video and status != "training_preview"):
             raise RuntimeError(f"Image-to-3d session creation failed (status='{status}')")
 
         session_code = result['data']['session_code']
 
         if verbose:
             print(f'[INFO] Image-to-3d session created ({session_code})')
-            print(f'[INFO] Running preview spin generation...')
+            step_label = "spin generation" if generate_spin_video else "mesh generation"
+            print(f'[INFO] Running preview {step_label}...')
 
-        # wait for preview spin generation to complete (20-30s)
-        start_time = time.time()
-        run_time = 0.
-        while True:
-            time.sleep(2)
-            result = self.backend.get_image_to_3d_session_info(session_code)
-            status = result['data']['status']
-            if status == 'spin_generate_done':
-                break
-            elif status == 'spin_generate_failed':
-                raise RuntimeError("Preview spin generation failed")
-            else:
-                assert status == 'spin_generate_processing', f"status='{status}'"
-            run_time = time.time() - start_time
-            if run_time >= timeout:
-                raise RuntimeError("Preview spin generation timed out")
-        
-        if verbose:
-            print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
-            print(f'[INFO] Running preview mesh export...')
+        if generate_spin_video:
+            # wait for preview spin generation to complete (20-30s)
+            start_time = time.time()
+            run_time = 0.
+            while True:
+                time.sleep(2)
+                result = self.backend.get_image_to_3d_session_info(session_code)
+                status = result['data']['status']
+                if status == 'spin_generate_done':
+                    break
+                elif status == 'spin_generate_failed':
+                    raise RuntimeError("Preview spin generation failed")
+                else:
+                    assert status == 'spin_generate_processing', f"status='{status}'"
+                run_time = time.time() - start_time
+                if run_time >= timeout:
+                    raise RuntimeError("Preview spin generation timed out")
+            
+            if verbose:
+                print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
+                print(f'[INFO] Running preview mesh export...')
 
-        # TODO: API option to skip spin rendering and go straight to mesh
-        spin_url = result['data']['spins'][0]["image_url"]
+            # TODO: API option to skip spin rendering and go straight to mesh
+            spin_url = result['data']['spins'][0]["image_url"]
 
-        # download spin video
-        spin_path = os.path.join(output, 'spin.mp4')
-        urlretrieve(spin_url, spin_path)
+            # download spin video
+            spin_path = os.path.join(output, 'spin.mp4')
+            urlretrieve(spin_url, spin_path)
 
-        # launch preview mesh export
-        result = self.backend.get_3d_preview(
-            session_code,
-            spin_url=spin_url,
-        )
+            # launch preview mesh export
+            result = self.backend.get_3d_preview(
+                session_code,
+                spin_url=spin_url,
+            )
+
+        else:
+            spin_path = None
 
         # wait for preview mesh export to complete (20-30s)
         start_time = time.time()
@@ -263,7 +272,8 @@ class CSMClient:
                 raise RuntimeError("Preview mesh export timed out")
             
         if verbose:
-            print(f'[INFO] Preview mesh export completed in {run_time:.1f}s')
+            step_label = "mesh export" if generate_spin_video else "mesh generation"
+            print(f'[INFO] Preview {step_label} completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
         if mesh_format == 'obj':
@@ -289,6 +299,7 @@ class CSMClient:
             prompt,
             style_id="",
             guidance=6,
+            generate_spin_video=False,
             diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
@@ -342,6 +353,7 @@ class CSMClient:
         # launch image-to-3d
         spin_path, mesh_path = self.image_to_3d(
             image_url,
+            generate_spin_video=generate_spin_video,
             diffusion_time_steps=diffusion_time_steps,
             mesh_format=mesh_format,
             output=output,
