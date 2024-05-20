@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 from urllib.request import urlretrieve
 import requests
 import base64
@@ -61,7 +62,6 @@ class BackendClient:
             *,
             preview_mesh="turbo",
             generate_preview_mesh=False,
-            #manual_segmentation=False,
             auto_gen_3d=False,
             ## preview args (turbo)
             diffusion_time_steps=75,
@@ -91,6 +91,7 @@ class BackendClient:
             "auto_gen_3d": auto_gen_3d,
             "topology": topology,
             "texture_resolution": texture_resolution,
+            "manual_segmentation": False,  # TODO: implement this option
         }
 
         response = requests.post(
@@ -213,7 +214,7 @@ class CSMClient:
             self,
             image,
             *,
-            generate_spin_video=False,  # TODO: deprecate this option
+            generate_spin_video=False,
             diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
@@ -232,12 +233,14 @@ class CSMClient:
 
         Returns
         -------
-        spin_path : str or None
-            Local path of the rendered spin video. None by default, unless
-            a spin is explicitly requested.
         mesh_path : str
             Local path of the resulting mesh file.
         """
+        if generate_spin_video:
+            warnings.warn(
+                "The option `generate_spin_video=True` is deprecated and will be removed "
+                "in a future release", DeprecationWarning)
+
         mesh_format = mesh_format.lower()
         if mesh_format not in ['obj', 'glb', 'usdz']:
             raise ValueError(
@@ -306,10 +309,6 @@ class CSMClient:
             )
             step_label = "mesh export"
 
-        else:
-            spin_path = None
-
-
         if verbose:
             print(f'[INFO] Running preview {step_label}...')
 
@@ -347,10 +346,9 @@ class CSMClient:
             raise ValueError(f"Encountered unexpected mesh_format value ('{mesh_format}').")
 
         mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
-
         urlretrieve(mesh_url, mesh_path)
 
-        return spin_path, mesh_path
+        return mesh_path
 
     def text_to_3d(
             self,
@@ -374,14 +372,11 @@ class CSMClient:
 
         Returns
         -------
+        mesh_path : str
+            Local path of the resulting mesh file.
         image_path : str
             Local path of the image that was generated as part of the
             text-to-3d pipeline.
-        spin_path : str or None
-            Local path of the rendered spin video. None by default, unless
-            a spin is explicitly requested.
-        mesh_path : str
-            Local path of the resulting mesh file.
         """
         os.makedirs(output, exist_ok=True)
 
@@ -428,7 +423,7 @@ class CSMClient:
         urlretrieve(image_url, image_path)
 
         # launch image-to-3d
-        spin_path, mesh_path = self.image_to_3d(
+        mesh_path = self.image_to_3d(
             image_url,
             generate_spin_video=generate_spin_video,
             diffusion_time_steps=diffusion_time_steps,
@@ -438,7 +433,7 @@ class CSMClient:
             verbose=verbose
         )
 
-        return image_path, spin_path, mesh_path
+        return mesh_path, image_path
 
 
 def pil_image_to_x64(image: Image.Image) -> str:

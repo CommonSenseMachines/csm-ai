@@ -3,7 +3,7 @@
 ## Installation
 
 ```
-# from PyPI (coming soon)
+# from PyPI
 pip install csm
 
 # from source
@@ -27,12 +27,12 @@ Run an `image-to-3d` job:
 # a) using a local image path
 image_path = "/path/to/image.png"
 
-spin_path, mesh_path = csm_client.image_to_3d(image_path, mesh_format='glb', verbose=True)
+mesh_path = csm_client.image_to_3d(image_path, mesh_format='glb', verbose=True)
 
 # b) using an image URL
 image_url = "https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png"
 
-spin_path, mesh_path = csm_client.image_to_3d(image_url, mesh_format='obj')
+mesh_path = csm_client.image_to_3d(image_url, mesh_format='obj')
 ```
 
 Run a `text-to-3d` job:
@@ -40,7 +40,7 @@ Run a `text-to-3d` job:
 ```python
 prompt = "3d asset of a character head, cartoon style, low poly, front view"
 
-image_path, spin_path, mesh_path = csm_client.text_to_3d(prompt, mesh_format='glb')
+mesh_path, image_path = csm_client.text_to_3d(prompt, mesh_format='glb')
 ```
 
 **Mesh formats:** Choose any of ['obj', 'glb', 'usdz'] for the `mesh_format` argument.
