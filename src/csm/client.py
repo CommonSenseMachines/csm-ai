@@ -25,7 +25,7 @@ class BackendClient:
     def __init__(
             self,
             api_key=None,
-            base_url="https://api.csm.ai:5566",
+            base_url="https://api.csm.ai",
         ):
         if api_key is None:
             api_key = os.environ.get('CSM_API_KEY')
@@ -174,7 +174,7 @@ class CSMClient:
     def __init__(
             self,
             api_key=None,
-            base_url="https://api.csm.ai:5566",
+            base_url="https://api.csm.ai",
         ):
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
