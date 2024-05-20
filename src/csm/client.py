@@ -45,6 +45,13 @@ class BackendClient:
             'x-api-key': self.api_key,
         }
 
+    def _check_http_response(self, response: requests.Response):
+        if not (200 <= response.status_code < 300):
+            raise RuntimeError(
+                f"HTTP request failed with status code {response.status_code} "
+                f"({response.reason})"
+            )
+
     # image-to-3d API
     # -------------------------------------------
 
@@ -91,6 +98,7 @@ class BackendClient:
             json=parameters,
             headers=self.headers,
         )
+        self._check_http_response(response)  # expected=201
 
         return response.json()
 
@@ -99,6 +107,7 @@ class BackendClient:
             url=f"{self.base_url}/image-to-3d-sessions/{session_code}",
             headers=self.headers,
         )
+        self._check_http_response(response)  # expected=200
 
         return response.json()
     
@@ -128,6 +137,7 @@ class BackendClient:
             headers=self.headers,
             timeout=100,
         )
+        self._check_http_response(response)  # expected=200
 
         return response.json()
 
@@ -151,6 +161,7 @@ class BackendClient:
             json=parameters,
             headers=self.headers,
         )
+        self._check_http_response(response)
 
         return response.json()
 
@@ -159,6 +170,7 @@ class BackendClient:
             url=f"{self.base_url}/tti-sessions/{session_code}",
             headers=self.headers,
         )
+        self._check_http_response(response)
 
         return response.json()
 
@@ -256,9 +268,11 @@ class CSMClient:
 
         if verbose:
             print(f'[INFO] Image-to-3d session created ({session_code})')
-            print(f'[INFO] Running preview {step_label}...')
 
         if generate_spin_video:
+            if verbose:
+                print(f'[INFO] Running preview {step_label}...')
+
             # wait for preview spin generation to complete (20-30s)
             start_time = time.time()
             run_time = 0.
@@ -277,10 +291,8 @@ class CSMClient:
                     raise RuntimeError(f"Preview {step_label} timed out")
             
             if verbose:
-                print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
-                print(f'[INFO] Running preview mesh export...')
+                print(f'[INFO] Preview {step_label} completed in {run_time:.1f}s')
 
-            # TODO: API option to skip spin rendering and go straight to mesh
             spin_url = result['data']['spins'][0]["image_url"]
 
             # download spin video
@@ -292,11 +304,14 @@ class CSMClient:
                 session_code,
                 spin_url=spin_url,
             )
+            step_label = "mesh export"
 
         else:
             spin_path = None
 
-        step_label = "mesh export" if generate_spin_video else "mesh generation"
+
+        if verbose:
+            print(f'[INFO] Running preview {step_label}...')
 
         # wait for preview mesh export to complete (20-30s)
         start_time = time.time()
