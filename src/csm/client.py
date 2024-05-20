@@ -8,6 +8,20 @@ from PIL import Image
 
 
 class BackendClient:
+    r"""A backend client class for raw GET/POST requests to the API.
+
+    .. warning::
+        This class should not be used directly. Instead, call...
+
+    Parameters
+    ----------
+    api_key : str
+        An API key for the CSM account that you would like to use. Alternatively,
+        you can specify the key with environment variable `CSM_API_KEY`.
+    base_url : str
+        Base url for the API. In general this should not be modified; it is 
+        included only for debugging purposes.
+    """
     def __init__(
             self,
             api_key=None,
@@ -155,6 +169,8 @@ class BackendClient:
 
 
 class CSMClient:
+    r"""Core client class for accessing the CSM API.
+    """
     def __init__(
             self,
             api_key=None,
