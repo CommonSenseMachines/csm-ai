@@ -76,7 +76,7 @@ class BackendClient:
         parameters = {
             "image_url": image_url,
             "preview_mesh": preview_mesh,
-            #"generate_preview_mesh": generate_preview_mesh,
+            "generate_preview_mesh": generate_preview_mesh,
             "pixel_alignment": pixel_alignment,
             "model_resolution": model_resolution,
             "resolution": polygon_count,
@@ -85,8 +85,6 @@ class BackendClient:
             "topology": topology,
             "texture_resolution": texture_resolution,
         }
-        if generate_preview_mesh:
-            parameters["generate_preview_mesh"] = True
 
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions",
