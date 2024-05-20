@@ -14,6 +14,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../src'))
 
+from csm import __version__
+
 
 # -- Project information -----------------------------------------------------
 
@@ -21,8 +23,10 @@ project = 'csm'
 copyright = '2024, Common Sense Machines'
 author = 'Common Sense Machines'
 
+# The short X.Y version.
+version = __version__
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = version
 
 
 # -- General configuration ---------------------------------------------------

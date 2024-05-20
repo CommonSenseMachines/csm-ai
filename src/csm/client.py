@@ -8,16 +8,17 @@ from PIL import Image
 
 
 class BackendClient:
-    r"""A backend client class for raw GET/POST requests to the API.
+    r"""A backend client class for raw GET/POST requests to the REST API.
 
     .. warning::
-        This class should not be used directly. Instead, call...
+        This class should not be accessed directly. Instead, use :class:`CSMClient`
+        to interface with the API.
 
     Parameters
     ----------
-    api_key : str
-        An API key for the CSM account that you would like to use. Alternatively,
-        you can specify the key with environment variable `CSM_API_KEY`.
+    api_key : str, optional
+        API key for the CSM account you would like to use. If not provided,
+        the environment variable `CSM_API_KEY` is used instead.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -64,8 +65,6 @@ class BackendClient:
             topology="tris",
             texture_resolution=2048,
         ):
-        """Initialize an image-to-3d session.
-        """
         assert preview_mesh in ["turbo", "hd"]
         assert 16 <= diffusion_time_steps <= 200
         assert pixel_alignment in ["lowest", "highest"]
@@ -143,8 +142,6 @@ class BackendClient:
             style_id="",
             guidance=6,
         ):
-        """Initialize a text-to-image session.
-        """
         parameters = {
             'prompt': str(prompt),
             'style_id': str(style_id),
@@ -169,7 +166,16 @@ class BackendClient:
 
 
 class CSMClient:
-    r"""Core client class for accessing the CSM API.
+    r"""Core client utility for accessing the CSM API.
+
+    Parameters
+    ----------
+    api_key : str, optional
+        API key for the CSM account you would like to use. If not provided,
+        the environment variable `CSM_API_KEY` is used instead.
+    base_url : str
+        Base url for the API. In general this should not be modified; it is 
+        included only for debugging purposes.
     """
     def __init__(
             self,
@@ -196,6 +202,7 @@ class CSMClient:
     def image_to_3d(
             self,
             image,
+            *,
             generate_spin_video=False,  # TODO: deprecate this option
             diffusion_time_steps=75,
             mesh_format='obj',
@@ -203,6 +210,24 @@ class CSMClient:
             timeout=200,
             verbose=False,
         ):
+        r"""Generate a 3D mesh from an image.
+
+        The input image can be provided as a URL, a local path, or a :class:`PIL.Image`.
+
+        Parameters
+        ----------
+        image : str or Image
+            The input image. May be provided as a url, a local path, or a
+            :class:`Image` instance.
+
+        Returns
+        -------
+        spin_path : str or None
+            Local path of the rendered spin video. None by default, unless
+            a spin is explicitly requested.
+        mesh_path : str
+            Local path of the resulting mesh file.
+        """
         mesh_format = mesh_format.lower()
         if mesh_format not in ['obj', 'glb', 'usdz']:
             raise ValueError(
@@ -317,6 +342,7 @@ class CSMClient:
     def text_to_3d(
             self,
             prompt,
+            *,
             style_id="",
             guidance=6,
             generate_spin_video=False,
@@ -326,6 +352,24 @@ class CSMClient:
             timeout=200,
             verbose=False,
         ):
+        r"""Generate a 3D mesh from a text prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The input text prompt.
+
+        Returns
+        -------
+        image_path : str
+            Local path of the image that was generated as part of the
+            text-to-3d pipeline.
+        spin_path : str or None
+            Local path of the rendered spin video. None by default, unless
+            a spin is explicitly requested.
+        mesh_path : str
+            Local path of the resulting mesh file.
+        """
         os.makedirs(output, exist_ok=True)
 
         # initialize text-to-image session

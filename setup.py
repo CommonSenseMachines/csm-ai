@@ -21,7 +21,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Common Sense Machines",
     author_email="support@csm.ai",
-    url="https://docs.csm.ai",
+    url="https://csm.ai",
     packages=find_packages('./src'),
     package_dir={'': 'src'},
     classifiers=[
