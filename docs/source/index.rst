@@ -10,6 +10,8 @@ Welcome to csm's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   install
+   quick_start
    api
 
 
