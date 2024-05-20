@@ -229,9 +229,10 @@ class CSMClient:
 
         session_code = result['data']['session_code']
 
+        step_label = "spin generation" if generate_spin_video else "mesh generation"
+
         if verbose:
             print(f'[INFO] Image-to-3d session created ({session_code})')
-            step_label = "spin generation" if generate_spin_video else "mesh generation"
             print(f'[INFO] Running preview {step_label}...')
 
         if generate_spin_video:
@@ -245,12 +246,12 @@ class CSMClient:
                 if status == 'spin_generate_done':
                     break
                 elif status == 'spin_generate_failed':
-                    raise RuntimeError("Preview spin generation failed")
-                else:
-                    assert status == 'spin_generate_processing', f"status='{status}'"
+                    raise RuntimeError(f"Preview {step_label} failed")
+                elif status != 'spin_generate_processing':
+                    raise RuntimeError(f"Unexpected error during preview {step_label} (status='{status}')")
                 run_time = time.time() - start_time
                 if run_time >= timeout:
-                    raise RuntimeError("Preview spin generation timed out")
+                    raise RuntimeError(f"Preview {step_label} timed out")
             
             if verbose:
                 print(f'[INFO] Preview spin generation completed in {run_time:.1f}s')
@@ -272,6 +273,8 @@ class CSMClient:
         else:
             spin_path = None
 
+        step_label = "mesh export" if generate_spin_video else "mesh generation"
+
         # wait for preview mesh export to complete (20-30s)
         start_time = time.time()
         run_time = 0.
@@ -282,15 +285,14 @@ class CSMClient:
             if status == 'preview_done':
                 break
             elif status == 'preview_failed':
-                raise RuntimeError("Preview mesh export failed.")
+                raise RuntimeError(f"Preview {step_label} failed.")
             elif status != 'training_preview':
-                raise RuntimeError(f"Unexpected error during preview mesh export (status='{status}')")
+                raise RuntimeError(f"Unexpected error during preview {step_label} (status='{status}')")
             run_time = time.time() - start_time
             if run_time >= timeout:
-                raise RuntimeError("Preview mesh export timed out")
+                raise RuntimeError(f"Preview {step_label} timed out")
             
         if verbose:
-            step_label = "mesh export" if generate_spin_video else "mesh generation"
             print(f'[INFO] Preview {step_label} completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
