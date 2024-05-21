@@ -19,7 +19,7 @@ from csm import __version__
 
 # -- Project information -----------------------------------------------------
 
-project = 'csm'
+project = 'csm-python'
 copyright = '2024, Common Sense Machines'
 author = 'Common Sense Machines'
 
