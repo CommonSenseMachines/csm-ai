@@ -4,10 +4,10 @@
 
 ```
 # from PyPI
-pip install csm-python
+pip install csm-ai
 
 # from source
-pip install git+https://github.com/CommonSenseMachines/csm-python.git
+pip install git+https://github.com/CommonSenseMachines/csm-ai.git
 ```
 
 ## Usage

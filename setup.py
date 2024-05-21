@@ -14,14 +14,14 @@ def get_version():
 
 # Setup
 setup(
-    name="csm-python",
+    name="csm-ai",
     version=get_version(),
     description="The official Python library for the CSM API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Common Sense Machines",
     author_email="support@csm.ai",
-    url="https://csm.ai",
+    url="https://github.com/CommonSenseMachines/csm-ai",
     packages=find_packages('./src'),
     package_dir={'': 'src'},
     classifiers=[
