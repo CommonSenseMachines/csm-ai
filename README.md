@@ -4,7 +4,7 @@
 
 ```
 # from PyPI
-pip install csm
+pip install csm-python
 
 # from source
 pip install git+https://github.com/CommonSenseMachines/csm-python.git

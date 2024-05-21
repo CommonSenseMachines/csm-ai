@@ -14,7 +14,7 @@ def get_version():
 
 # Setup
 setup(
-    name="csm",
+    name="csm-python",
     version=get_version(),
     description="The official Python library for the CSM API",
     long_description=long_description,
