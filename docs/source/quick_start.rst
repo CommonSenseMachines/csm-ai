@@ -18,7 +18,7 @@ Run image-to-3d inference:
     # a) using a local image path
     image_path = "/path/to/image.png"
 
-    mesh_path = csm_client.image_to_3d(image_path, mesh_format='glb', verbose=True)
+    mesh_path = csm_client.image_to_3d(image_path, mesh_format='glb')
 
     # b) using an image URL
     image_url = "https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png"
@@ -37,4 +37,4 @@ Run text-to-3d inference:
 
 **Mesh formats:** Choose any of ['obj', 'glb', 'usdz'] for the `mesh_format` argument.
 
-**Verbose mode:** Run client functions with option `verbose=True` to see additional status messages and logs.
+**Verbose mode:** Run client functions with option `verbose=True` (the default) to see additional status messages and logs.

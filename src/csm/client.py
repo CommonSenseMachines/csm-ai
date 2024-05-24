@@ -219,7 +219,7 @@ class CSMClient:
             mesh_format='obj',
             output='./',
             timeout=200,
-            verbose=False,
+            verbose=True,
         ):
         r"""Generate a 3D mesh from an image.
 
@@ -361,7 +361,7 @@ class CSMClient:
             mesh_format='obj',
             output='./',
             timeout=200,
-            verbose=False,
+            verbose=True,
         ):
         r"""Generate a 3D mesh from a text prompt.
 
