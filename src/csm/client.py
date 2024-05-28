@@ -191,7 +191,7 @@ class CSMClient:
     def __init__(
             self,
             api_key=None,
-            base_url="https://api.csm.ai",
+            base_url="https://devapi.csm.ai",
         ):
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
