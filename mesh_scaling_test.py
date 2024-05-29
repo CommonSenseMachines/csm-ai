@@ -7,6 +7,6 @@ image_url = "https://imageto3d.blob.core.windows.net/data/test/guard/0_rgba.png?
 #specify the width, height, and depth of the target object
 scaled_bbox = [0.86, 0.86, 0.1]    
 #generate preview mesh and download it.
-mesh_path = csm_client.image_to_3d(image_path, mesh_format='obj', generate_spin_video = True, scaled_bbox=scaled_bbox)
+mesh_path = csm_client.image_to_3d(image_url, mesh_format='obj', generate_spin_video = True, scaled_bbox=scaled_bbox)
 
 print(f"Mesh path: {mesh_path}")
