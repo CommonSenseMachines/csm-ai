@@ -130,8 +130,10 @@ class BackendClient:
         parameters = {
             "selected_spin_index": selected_spin_index,
             "selected_spin": spin_url,
-            "scaled_bbox": scaled_bbox,
+            "scaled_bbox": [s for s in scaled_bbox],
         }
+
+        breakpoint()
 
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions/get-3d/preview/{session_code}",
