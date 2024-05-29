@@ -270,12 +270,12 @@ class CSMClient:
         if (generate_spin_video and status != "spin_generate_processing") or (not generate_spin_video and status != "training_preview"):
             raise RuntimeError(f"Image-to-3d session creation failed (status='{status}')")
 
-        session_code = result['data']['session_code']
+        self.session_code = result['data']['session_code']
 
         step_label = "spin generation" if generate_spin_video else "mesh generation"
 
         if verbose:
-            print(f'[INFO] Image-to-3d session created ({session_code})')
+            print(f'[INFO] Image-to-3d session created ({self.session_code})')
 
         if generate_spin_video:
             if verbose:
@@ -286,7 +286,7 @@ class CSMClient:
             run_time = 0.
             while True:
                 time.sleep(2)
-                result = self.backend.get_image_to_3d_session_info(session_code)
+                result = self.backend.get_image_to_3d_session_info(self.session_code)
                 status = result['data']['status']
                 if status == 'spin_generate_done':
                     break
@@ -309,7 +309,7 @@ class CSMClient:
 
             # launch preview mesh export
             result = self.backend.get_3d_preview(
-                session_code,
+                self.session_code,
                 spin_url=spin_url,
                 scaled_bbox = scaled_bbox,
             )
@@ -323,7 +323,7 @@ class CSMClient:
         run_time = 0.
         while True:
             time.sleep(2)
-            result = self.backend.get_image_to_3d_session_info(session_code)
+            result = self.backend.get_image_to_3d_session_info(self.session_code)
             status = result['data']['status']
             if status == 'preview_done':
                 break
@@ -397,10 +397,10 @@ class CSMClient:
         if status != "processing":
             raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
 
-        session_code = result['data']['session_code']
+        self.session_code = result['data']['session_code']
 
         if verbose:
-            print(f'[INFO] Text-to-image session created ({session_code})')
+            print(f'[INFO] Text-to-image session created ({self.session_code})')
             print(f'[INFO] Running text-to-image generation...')
 
         # wait for image generation to complete
@@ -408,7 +408,7 @@ class CSMClient:
         run_time = 0.
         while True:
             time.sleep(2)
-            result = self.backend.get_text_to_image_session_info(session_code)
+            result = self.backend.get_text_to_image_session_info(self.session_code)
             status = result['data']['status']
             if status == 'completed':
                 break
