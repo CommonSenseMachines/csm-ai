@@ -1,7 +1,6 @@
 from csm import CSMClient
 
 # NOTE: replace with a valid API key
-breakpoint()
 csm_client = CSMClient(api_key='C6544b919C9DD82cccdF41d5D4778043')
 
 # a) using a local image path
