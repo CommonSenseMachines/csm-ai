@@ -71,6 +71,7 @@ class BackendClient:
             polygon_count="high_poly",
             topology="tris",
             texture_resolution=2048,
+            scaled_bbox = (1.0, 1.0, 1.0),
         ):
         assert preview_mesh in ["turbo", "hd"]
         assert 16 <= diffusion_time_steps <= 200
@@ -92,6 +93,7 @@ class BackendClient:
             "topology": topology,
             "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
+            "scaled_bbox": scaled_bbox,
         }
 
         response = requests.post(
