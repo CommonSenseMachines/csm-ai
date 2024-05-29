@@ -265,6 +265,7 @@ class CSMClient:
             generate_preview_mesh=not generate_spin_video,
             diffusion_time_steps=diffusion_time_steps,
             auto_gen_3d=False,
+            scaled_bbox = scaled_bbox,
         )
 
         status = result['data']['status']
