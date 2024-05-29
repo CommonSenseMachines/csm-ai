@@ -132,7 +132,7 @@ class BackendClient:
         parameters = {
             "selected_spin_index": selected_spin_index,
             "selected_spin": spin_url,
-            "scaled_bbox": [s for s in scaled_bbox],
+            "scaled_bbox": scaled_bbox,
         }
 
         breakpoint()
