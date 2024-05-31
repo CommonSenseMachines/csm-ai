@@ -71,6 +71,7 @@ class BackendClient:
             polygon_count="high_poly",
             topology="tris",
             texture_resolution=2048,
+            scaled_bbox=(1.0, 1.0, 1.0),
         ):
         assert preview_mesh in ["turbo", "hd"]
         assert 16 <= diffusion_time_steps <= 200
@@ -92,6 +93,7 @@ class BackendClient:
             "topology": topology,
             "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
+            "scaled_bbox": [float(s) for s in scaled_bbox],
         }
 
         response = requests.post(
@@ -120,7 +122,7 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_preview(self, session_code, spin_url=None):
+    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=(1.0, 1.0, 1.0)):
         selected_spin_index = 0
 
         if spin_url is None:
@@ -130,6 +132,7 @@ class BackendClient:
         parameters = {
             "selected_spin_index": selected_spin_index,
             "selected_spin": spin_url,
+            "scaled_bbox": [float(s) for s in scaled_bbox],
         }
 
         response = requests.post(
@@ -220,6 +223,7 @@ class CSMClient:
             output='./',
             timeout=200,
             verbose=True,
+            scaled_bbox=(1.0, 1.0, 1.0),
         ):
         r"""Generate a 3D mesh from an image.
 
@@ -259,6 +263,7 @@ class CSMClient:
             generate_preview_mesh=not generate_spin_video,
             diffusion_time_steps=diffusion_time_steps,
             auto_gen_3d=False,
+            scaled_bbox=scaled_bbox,
         )
 
         status = result['data']['status']
@@ -306,6 +311,7 @@ class CSMClient:
             result = self.backend.get_3d_preview(
                 session_code,
                 spin_url=spin_url,
+                scaled_bbox=scaled_bbox,
             )
             step_label = "mesh export"
 
