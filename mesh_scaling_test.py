@@ -1,13 +1,13 @@
 from csm import CSMClient
 
-csm_client = CSMClient(api_key='xxx')
+csm_client = CSMClient(api_key='C6544b919C9DD82cccdF41d5D4778043')
 
 #using a local image path or image_url
 image_url = "./assets/sofa.png"
 #specify the width, height, and depth of the target object
-scaled_bbox = [0.86, 0.86, 0.5]    
+scaled_bbox = [0.86, 0.86, 0.1]    
 #generate preview mesh and download it.
-mesh_path = csm_client.image_to_3d(image_url, mesh_format='obj', scaled_bbox=scaled_bbox)
+mesh_path = csm_client.image_to_3d(image_url, mesh_format='obj',  scaled_bbox=scaled_bbox)
 
 print(f"Mesh path: {mesh_path}")
 
