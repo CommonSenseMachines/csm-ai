@@ -34,6 +34,12 @@ image_url = "https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png
 
 mesh_path = csm_client.image_to_3d(image_url, mesh_format='obj')
 ```
+To make the output 3D asset aligned with the user-specified dimensions, you may add one more parameter in the image_to_3d function call
+```
+mesh_path = csm_client.image_to_3d(image_path, mesh_format='glb', scaled_bbox=(0.8,0.8,05))
+``` 
+where scaled_bbox specify the width, height and depth, respectively.
+
 
 Run a `text-to-3d` job:
 
