@@ -27,7 +27,7 @@ class BackendClient:
     def __init__(
             self,
             api_key=None,
-            base_url="https://api.csm.ai",
+            base_url="https://devapi.csm.ai",
         ):
         if api_key is None:
             api_key = os.environ.get('CSM_API_KEY')
@@ -114,9 +114,11 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_refine(self, session_code):
+    def get_3d_refine(self, session_code, scaled_bbox=(1.0, 1.0, 1.0)):
+        parameters = {"scaled_bbox": [float(s) for s in scaled_bbox]}
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions/get-3d/refine/{session_code}",
+            json=parameters,
             headers=self.headers,
         )
 
@@ -194,7 +196,7 @@ class CSMClient:
     def __init__(
             self,
             api_key=None,
-            base_url="https://api.csm.ai",
+            base_url="https://devapi.csm.ai",
         ):
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
@@ -218,6 +220,7 @@ class CSMClient:
             image,
             *,
             generate_spin_video=False,
+            refinement=False,
             diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
@@ -351,8 +354,45 @@ class CSMClient:
         else:
             raise ValueError(f"Encountered unexpected mesh_format value ('{mesh_format}').")
 
-        mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
-        urlretrieve(mesh_url, mesh_path)
+        if not refinement:
+            mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
+            urlretrieve(mesh_url, mesh_path)
+        else:
+            result = self.backend.get_3d_refine(session_code, scaled_bbox=scaled_bbox)
+
+            # wait for preview mesh export to complete (20-30s)
+            start_time = time.time()
+            run_time = 0.
+            while True:
+                time.sleep(2)
+                result = self.backend.get_image_to_3d_session_info(session_code)
+                status = result['data']['status']
+                if status == 'refine_done':
+                    break
+                elif 'failed' in status:
+                    raise RuntimeError(f"Mesh refinement failed.")
+                run_time = time.time() - start_time
+                if run_time >= 60*60*3:
+                    raise RuntimeError(f"Mesh refinement timed out")
+                
+            if verbose:
+                print(f'[INFO] Mesh refinement completed in {run_time:.1f}s')
+
+            # download mesh file based on the requested format
+            if mesh_format == 'obj':
+                mesh_url = result['data']['mesh_url_zip']
+                mesh_file = 'mesh.zip'
+            elif mesh_format == 'glb':
+                mesh_url = result['data']['mesh_url_glb']
+                mesh_file = 'mesh.glb'
+            elif mesh_format == 'usdz':
+                mesh_url = result['data']['mesh_url_usdz']
+                mesh_file = 'mesh.usdz'
+            else:
+                raise ValueError(f"Encountered unexpected mesh_format value ('{mesh_format}').")    
+            
+            mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
+            urlretrieve(mesh_url, mesh_path)
 
         return mesh_path
 
