@@ -5,8 +5,8 @@ from urllib.request import urlretrieve
 from dataclasses import dataclass
 import requests
 import base64
+import PIL.Image
 from io import BytesIO
-from PIL import Image
 
 
 class BackendClient:
@@ -20,7 +20,7 @@ class BackendClient:
     ----------
     api_key : str, optional
         API key for the CSM account you would like to use. If not provided,
-        the environment variable `CSM_API_KEY` is used instead.
+        the environment variable :envvar:`CSM_API_KEY` is used instead.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -224,7 +224,7 @@ class CSMClient:
     ----------
     api_key : str, optional
         API key for the CSM account you would like to use. If not provided,
-        the environment variable `CSM_API_KEY` is used instead.
+        the environment variable :envvar:`CSM_API_KEY` is used instead.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -240,11 +240,11 @@ class CSMClient:
         if isinstance(image, str):
             if os.path.isfile(image):  # local file path
                 image_path = image
-                pil_image = Image.open(image_path)
+                pil_image = PIL.Image.open(image_path)
             else:  # URL for a web file
                 image_url = image
                 return image_url  # TODO: verify that this is a valid URL
-        elif isinstance(image, Image.Image):
+        elif isinstance(image, PIL.Image.Image):
             pil_image = image
         else:
             raise ValueError(f"Encountered unexpected type for the input image.")
@@ -265,13 +265,13 @@ class CSMClient:
         ):
         r"""Generate a 3D mesh from an image.
 
-        The input image can be provided as a URL, a local path, or a :class:`PIL.Image`.
+        The input image can be provided as a URL, a local path, or a :class:`PIL.Image.Image`.
 
         Parameters
         ----------
-        image : str or Image
+        image : str or PIL.Image.Image
             The input image. May be provided as a url, a local path, or a
-            :class:`Image` instance.
+            :class:`PIL.Image.Image` instance.
 
         Returns
         -------
@@ -478,7 +478,7 @@ class CSMClient:
         return TextTo3DResult(session_code=i23.session_code, mesh_path=i23.mesh_path, image_path=image_path)
 
 
-def pil_image_to_x64(image: Image.Image) -> str:
+def pil_image_to_x64(image: PIL.Image.Image) -> str:
     """PIL.Image.Image to base64"""
     buffer = BytesIO()
     image.save(buffer, "PNG")

@@ -38,7 +38,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     #'sphinx.ext.doctest',
-    #'sphinx.ext.intersphinx',
+    'sphinx.ext.intersphinx',
     #'sphinx.ext.todo',
     #'sphinx.ext.coverage',
     #'sphinx.ext.mathjax',
@@ -67,6 +67,13 @@ autodoc_default_options = {
 
 # Automatically generate the documentation for all submodules
 autosummary_generate = True
+
+# Configure sphinx.ext.intersphinx mapping to include references to 
+# standard libraries and other documentation.
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'pillow': ('https://pillow.readthedocs.io/en/stable', None),
+}
 
 # -- Options for HTML output -------------------------------------------------
 
