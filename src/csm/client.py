@@ -2,6 +2,7 @@ import os
 import time
 import warnings
 from urllib.request import urlretrieve
+from dataclasses import dataclass
 import requests
 import base64
 from io import BytesIO
@@ -179,6 +180,43 @@ class BackendClient:
         return response.json()
 
 
+@dataclass
+class ImageTo3DResult:
+    r"""
+    Output class for image-to-3d generation.
+
+    Parameters
+    ----------
+    session_code : str
+        The image-to-3d session code.
+    mesh_path : str
+        Local path of the generated mesh file.
+    """
+
+    session_code: str
+    mesh_path: str
+
+
+@dataclass
+class TextTo3DResult:
+    r"""
+    Output class for text-to-3d generation.
+
+    Parameters
+    ----------
+    session_code : str
+        The image-to-3d session code.
+    mesh_path : str
+        Local path of the generated mesh file.
+    image_path : str
+        Local path of the image generated as part of text-to-3d.
+    """
+
+    session_code: str
+    mesh_path: str
+    image_path: str
+
+
 class CSMClient:
     r"""Core client utility for accessing the CSM API.
 
@@ -237,8 +275,8 @@ class CSMClient:
 
         Returns
         -------
-        mesh_path : str
-            Local path of the resulting mesh file.
+        ImageTo3DResult
+            Result object. Contains the local path of the generated mesh file.
         """
         if generate_spin_video:
             warnings.warn(
@@ -354,7 +392,7 @@ class CSMClient:
         mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
         urlretrieve(mesh_url, mesh_path)
 
-        return mesh_path
+        return ImageTo3DResult(session_code=session_code, mesh_path=mesh_path)
 
     def text_to_3d(
             self,
@@ -378,11 +416,9 @@ class CSMClient:
 
         Returns
         -------
-        mesh_path : str
-            Local path of the resulting mesh file.
-        image_path : str
-            Local path of the image that was generated as part of the
-            text-to-3d pipeline.
+        TextTo3DResult
+            Result object. Contains the local path of the generated mesh file,
+            as well as the image that was generated as part of the pipeline.
         """
         os.makedirs(output, exist_ok=True)
 
@@ -429,7 +465,7 @@ class CSMClient:
         urlretrieve(image_url, image_path)
 
         # launch image-to-3d
-        mesh_path = self.image_to_3d(
+        i23 = self.image_to_3d(
             image_url,
             generate_spin_video=generate_spin_video,
             diffusion_time_steps=diffusion_time_steps,
@@ -439,7 +475,7 @@ class CSMClient:
             verbose=verbose
         )
 
-        return mesh_path, image_path
+        return TextTo3DResult(session_code=i23.session_code, mesh_path=i23.mesh_path, image_path=image_path)
 
 
 def pil_image_to_x64(image: Image.Image) -> str:
