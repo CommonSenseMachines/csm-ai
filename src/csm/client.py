@@ -358,6 +358,8 @@ class CSMClient:
             mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
             urlretrieve(mesh_url, mesh_path)
         else:
+            if verbose:
+                print(f'[INFO] Running mesh refinement...')
             result = self.backend.get_3d_refine(session_code, scaled_bbox=scaled_bbox)
 
             # wait for preview mesh export to complete (20-30s)
