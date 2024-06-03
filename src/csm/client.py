@@ -115,9 +115,11 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_refine(self, session_code):
+    def get_3d_refine(self, session_code, scaled_bbox=(1.0, 1.0, 1.0)):
+        parameters = {"scaled_bbox": [s for s in scaled_bbox]}
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions/get-3d/refine/{session_code}",
+            json=parameters,
             headers=self.headers,
         )
 
