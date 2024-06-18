@@ -343,10 +343,6 @@ class CSMClient:
 
             spin_url = result['data']['spins'][0]["image_url"]
 
-            # download spin video
-            spin_path = os.path.join(output, 'spin.mp4')
-            urlretrieve(spin_url, spin_path)
-
             # launch preview mesh export
             result = self.backend.get_3d_preview(
                 session_code,
