@@ -310,7 +310,10 @@ class CSMClient:
         )
 
         status = result['data']['status']
-        if (generate_spin_video and status != "spin_generate_processing") or (not generate_spin_video and status != "training_preview"):
+        if (
+            (generate_spin_video and status not in ["spin_generate_processing", "spin_generate_done"]) or
+            (not generate_spin_video and status not in ["training_preview", "preview_done"])
+            ):
             raise RuntimeError(f"Image-to-3d session creation failed (status='{status}')")
 
         session_code = result['data']['session_code']
