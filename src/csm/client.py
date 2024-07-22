@@ -61,41 +61,38 @@ class BackendClient:
             self,
             image_url,
             *,
-            preview_mesh="turbo",
             generate_preview_mesh=False,
-            auto_gen_3d=False,
-            ## preview args (turbo)
-            diffusion_time_steps=75,
+            auto_refine=False,
             ## refine args
-            pixel_alignment="highest",
-            model_resolution="high",
+            creativity="lowest",
+            refine_speed="fast",
             polygon_count="high_poly",
             topology="tris",
             texture_resolution=2048,
-            scaled_bbox=(1.0, 1.0, 1.0),
+            scaled_bbox=[],
+            pivot_point=[0.0, 0.0, 0.0]
         ):
-        assert preview_mesh in ["turbo", "hd"]
-        assert 16 <= diffusion_time_steps <= 200
-        assert pixel_alignment in ["lowest", "highest"]
-        assert model_resolution in ["low", "high"]
+        assert creativity in ["lowest", "moderate", "highest"]
+        assert refine_speed in ["slow", "fast"]
         assert polygon_count in ["low_poly", "high_poly"]
         assert topology in ["tris", "quads"]
         assert 128 <= texture_resolution <= 2048
 
         parameters = {
             "image_url": image_url,
-            "preview_mesh": preview_mesh,
             "generate_preview_mesh": generate_preview_mesh,
-            "pixel_alignment": pixel_alignment,
-            "model_resolution": model_resolution,
+            "creativity": creativity,
+            "refine_speed": refine_speed,
             "resolution": polygon_count,
-            "diffusion_time_steps": diffusion_time_steps,
-            "auto_gen_3d": auto_gen_3d,
+            "auto_refine": auto_refine,
             "topology": topology,
             "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
-            "scaled_bbox": [float(s) for s in scaled_bbox],
+            "pivot_point": [float(s) for s in pivot_point]
         }
+
+        if len(scaled_bbox) == 3:
+            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
 
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions",
@@ -115,8 +112,10 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_refine(self, session_code, scaled_bbox=(1.0, 1.0, 1.0)):
-        parameters = {"scaled_bbox": [s for s in scaled_bbox]}
+    def get_3d_refine(self, session_code, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]):
+        parameters = {"pivot_point": [s for s in pivot_point]}
+        if len(scaled_bbox) == 3:
+            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions/get-3d/refine/{session_code}",
             json=parameters,
@@ -125,7 +124,7 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=(1.0, 1.0, 1.0)):
+    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]):
         selected_spin_index = 0
 
         if spin_url is None:
@@ -135,8 +134,11 @@ class BackendClient:
         parameters = {
             "selected_spin_index": selected_spin_index,
             "selected_spin": spin_url,
-            "scaled_bbox": [float(s) for s in scaled_bbox],
+            "pivot_point": [s for s in pivot_point]
         }
+
+        if len(scaled_bbox) == 3:
+            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
 
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions/get-3d/preview/{session_code}",
@@ -258,12 +260,13 @@ class CSMClient:
             image,
             *,
             generate_spin_video=False,
-            diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
             timeout=200,
             verbose=True,
-            scaled_bbox=(1.0, 1.0, 1.0),
+            scaled_bbox=[],
+            pivot_point=[0.0, 0.0, 0.0],
+            refine_speed="fast"
         ):
         r"""Generate a 3D mesh from an image.
 
@@ -299,15 +302,18 @@ class CSMClient:
         # initialize session
         result = self.backend.create_image_to_3d_session(
             image_url,
-            preview_mesh="turbo",
             generate_preview_mesh=not generate_spin_video,
-            diffusion_time_steps=diffusion_time_steps,
-            auto_gen_3d=False,
+            auto_refine=False,
             scaled_bbox=scaled_bbox,
+            pivot_point=pivot_point,
+            refine_speed=refine_speed
         )
 
         status = result['data']['status']
-        if (generate_spin_video and status != "spin_generate_processing") or (not generate_spin_video and status != "training_preview"):
+        if (
+            (generate_spin_video and status not in ["spin_generate_processing", "spin_generate_done"]) or
+            (not generate_spin_video and status not in ["training_preview", "preview_done"])
+            ):
             raise RuntimeError(f"Image-to-3d session creation failed (status='{status}')")
 
         session_code = result['data']['session_code']
@@ -348,6 +354,7 @@ class CSMClient:
                 session_code,
                 spin_url=spin_url,
                 scaled_bbox=scaled_bbox,
+                pivot_point=pivot_point
             )
             step_label = "mesh export"
 
@@ -399,11 +406,13 @@ class CSMClient:
             style_id="",
             guidance=6,
             generate_spin_video=False,
-            diffusion_time_steps=75,
             mesh_format='obj',
             output='./',
             timeout=200,
             verbose=True,
+            scaled_bbox=[],
+            pivot_point=[0.0, 0.0, 0.0],
+            refine_speed="fast"
         ):
         r"""Generate a 3D mesh from a text prompt.
 
@@ -428,7 +437,7 @@ class CSMClient:
         )
 
         status = result['data']['status']
-        if status != "processing":
+        if status != "processing" and status != "completed":
             raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
 
         session_code = result['data']['session_code']
@@ -466,11 +475,13 @@ class CSMClient:
         i23 = self.image_to_3d(
             image_url,
             generate_spin_video=generate_spin_video,
-            diffusion_time_steps=diffusion_time_steps,
             mesh_format=mesh_format,
             output=output,
             timeout=timeout,
-            verbose=verbose
+            verbose=verbose,
+            scaled_bbox=scaled_bbox,
+            pivot_point=pivot_point,
+            refine_speed=refine_speed
         )
 
         return TextTo3DResult(session_code=i23.session_code, mesh_path=i23.mesh_path, image_path=image_path)
