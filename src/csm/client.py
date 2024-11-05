@@ -10,7 +10,7 @@ from io import BytesIO
 
 
 class BackendClient:
-    r"""A backend client class for raw GET/POST requests to the REST API.
+    """A backend client class for raw GET/POST requests to the REST API.
 
     .. warning::
         This class should not be accessed directly. Instead, use :class:`CSMClient`
@@ -42,12 +42,22 @@ class BackendClient:
 
     @property
     def headers(self):
+        """Constructs and returns the HTTP headers required for API requests."""
         return {
             'Content-Type': 'application/json',
             'x-api-key': self.api_key,
         }
 
     def _check_http_response(self, response: requests.Response):
+        """Validates the HTTP response for successful status codes.
+
+        Raises an error if the response indicates a failed request.
+        
+        Parameters
+        ----------
+        response : requests.Response
+            The HTTP response object to check.
+        """
         if not (200 <= response.status_code < 300):
             raise RuntimeError(
                 f"HTTP request failed with status code {response.status_code} "
@@ -73,6 +83,18 @@ class BackendClient:
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0]
         ):
+        """Creates an image-to-3D conversion session.
+
+        Parameters
+        ----------
+        image_url : str
+            URL of the image to convert into a 3D model.
+        
+        Returns
+        -------
+        dict
+            The response from the API containing session details.
+        """
         assert creativity in ["lowest", "moderate", "highest"]
         assert refine_speed in ["slow", "fast"]
         assert polygon_count in ["low_poly", "high_poly"]
@@ -107,6 +129,18 @@ class BackendClient:
         return response.json()
 
     def get_image_to_3d_session_info(self, session_code):
+        """Fetches information about an existing image-to-3D session.
+
+        Parameters
+        ----------
+        session_code : str
+            The session code of the image-to-3D session.
+        
+        Returns
+        -------
+        dict
+            The response from the API containing session details.
+        """
         response = requests.get(
             url=f"{self.base_url}/image-to-3d-sessions/{session_code}",
             headers=self.headers,
@@ -116,6 +150,18 @@ class BackendClient:
         return response.json()
     
     def get_3d_refine(self, session_code, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]):
+        """Requests refinement for an existing 3D model.
+
+        Parameters
+        ----------
+        session_code : str
+            The session code of the 3D model to refine.
+        
+        Returns
+        -------
+        dict
+            The response from the API with refinement results.
+        """
         parameters = {"pivot_point": [s for s in pivot_point]}
         if len(scaled_bbox) == 3:
             parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
@@ -128,6 +174,18 @@ class BackendClient:
         return response.json()
     
     def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]):
+        """Fetches a preview of the generated 3D model.
+
+        Parameters
+        ----------
+        session_code : str
+            The session code of the 3D model to preview.
+        
+        Returns
+        -------
+        dict
+            The response from the API with preview data.
+        """
         selected_spin_index = 0
 
         if spin_url is None:
@@ -162,6 +220,18 @@ class BackendClient:
             style_id="",
             guidance=6,
         ):
+        """Creates a text-to-image session.
+
+        Parameters
+        ----------
+        prompt : str
+            The text prompt for generating an image.
+        
+        Returns
+        -------
+        dict
+            The response from the API with session details.
+        """
         parameters = {
             'prompt': str(prompt),
             'style_id': str(style_id),
@@ -178,6 +248,18 @@ class BackendClient:
         return response.json()
 
     def get_text_to_image_session_info(self, session_code):
+        """Fetches information for an existing text-to-image session.
+
+        Parameters
+        ----------
+        session_code : str
+            The session code of the text-to-image session.
+        
+        Returns
+        -------
+        dict
+            The response from the API with session details.
+        """
         response = requests.get(
             url=f"{self.base_url}/tti-sessions/{session_code}",
             headers=self.headers,
@@ -189,8 +271,7 @@ class BackendClient:
 
 @dataclass
 class ImageTo3DResult:
-    r"""
-    Output class for image-to-3d generation.
+    """Output class for image-to-3d generation.
 
     Parameters
     ----------
@@ -199,15 +280,13 @@ class ImageTo3DResult:
     mesh_path : str
         Local path of the generated mesh file.
     """
-
     session_code: str
     mesh_path: str
 
 
 @dataclass
 class TextTo3DResult:
-    r"""
-    Output class for text-to-3d generation.
+    """Output class for text-to-3d generation.
 
     Parameters
     ----------
@@ -218,14 +297,13 @@ class TextTo3DResult:
     image_path : str
         Local path of the image generated as part of text-to-3d.
     """
-
     session_code: str
     mesh_path: str
     image_path: str
 
 
 class CSMClient:
-    r"""Core client utility for accessing the CSM API.
+    """Core client utility for accessing the CSM API.
 
     Parameters
     ----------
@@ -244,6 +322,18 @@ class CSMClient:
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
     def _handle_image_input(self, image):
+        """Handles image input by converting it to a base64-encoded string.
+
+        Parameters
+        ----------
+        image : str or PIL.Image.Image
+            The input image, either as a file path, URL, or PIL Image.
+
+        Returns
+        -------
+        str or PIL.Image.Image
+            The base64 encoded string if local or PIL image, else image URL.
+        """
         if isinstance(image, str):
             if os.path.isfile(image):  # local file path
                 image_path = image
@@ -272,15 +362,12 @@ class CSMClient:
             refine_speed="fast",
             preview_model="fast_sculpt"
         ):
-        r"""Generate a 3D mesh from an image.
-
-        The input image can be provided as a URL, a local path, or a :class:`PIL.Image.Image`.
-        The preview model can be set to either `fast_sculpt` or `turbo`.
+        """Generate a 3D mesh from an image.
 
         Parameters
         ----------
         image : str or PIL.Image.Image
-            The input image. May be provided as a url, a local path, or a
+            The input image. May be provided as a URL, a local path, or a
             :class:`PIL.Image.Image` instance.
 
         Returns
@@ -421,9 +508,7 @@ class CSMClient:
             refine_speed="fast",
             preview_model="fast_sculpt"
         ):
-        r"""Generate a 3D mesh from a text prompt.
-
-        The preview model can be set to either `fast_sculpt` or `turbo`.
+        """Generate a 3D mesh from a text prompt.
 
         Parameters
         ----------
@@ -498,7 +583,18 @@ class CSMClient:
 
 
 def pil_image_to_x64(image: PIL.Image.Image) -> str:
-    """PIL.Image.Image to base64"""
+    """Converts a PIL.Image.Image to a base64-encoded PNG string.
+
+    Parameters
+    ----------
+    image : PIL.Image.Image
+        The image to convert.
+
+    Returns
+    -------
+    str
+        The base64 encoded image string.
+    """
     buffer = BytesIO()
     image.save(buffer, "PNG")
     x64 = buffer.getvalue()
