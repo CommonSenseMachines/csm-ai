@@ -91,7 +91,7 @@ class BackendClient:
             "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
             "pivot_point": [float(s) for s in pivot_point],
-            "preview_model": preview_model,
+            "preview_mesh": preview_model,
         }
 
         if len(scaled_bbox) == 3:
