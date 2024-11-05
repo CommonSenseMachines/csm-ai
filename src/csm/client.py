@@ -29,7 +29,7 @@ class BackendClient:
             self,
             api_key=None,
             base_url="https://api.csm.ai",
-        ):
+        ) -> None:
         if api_key is None:
             api_key = os.environ.get('CSM_API_KEY')
             if api_key is None:
@@ -48,7 +48,7 @@ class BackendClient:
             'x-api-key': self.api_key,
         }
 
-    def _check_http_response(self, response: requests.Response):
+    def _check_http_response(self, response: requests.Response) -> None:
         """Validates the HTTP response for successful status codes.
 
         Raises an error if the response indicates a failed request.
@@ -82,7 +82,7 @@ class BackendClient:
             texture_resolution=2048,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0]
-        ):
+        ) -> dict:
         """Creates an image-to-3D conversion session.
 
         Parameters
@@ -128,7 +128,7 @@ class BackendClient:
 
         return response.json()
 
-    def get_image_to_3d_session_info(self, session_code):
+    def get_image_to_3d_session_info(self, session_code) -> dict:
         """Fetches information about an existing image-to-3D session.
 
         Parameters
@@ -149,7 +149,7 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_refine(self, session_code, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]):
+    def get_3d_refine(self, session_code, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]) -> dict:
         """Requests refinement for an existing 3D model.
 
         Parameters
@@ -173,7 +173,7 @@ class BackendClient:
 
         return response.json()
     
-    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]):
+    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]) -> dict:
         """Fetches a preview of the generated 3D model.
 
         Parameters
@@ -219,7 +219,7 @@ class BackendClient:
             prompt,
             style_id="",
             guidance=6,
-        ):
+        ) -> dict:
         """Creates a text-to-image session.
 
         Parameters
@@ -247,7 +247,7 @@ class BackendClient:
 
         return response.json()
 
-    def get_text_to_image_session_info(self, session_code):
+    def get_text_to_image_session_info(self, session_code: str) -> dict:
         """Fetches information for an existing text-to-image session.
 
         Parameters
@@ -318,10 +318,10 @@ class CSMClient:
             self,
             api_key=None,
             base_url="https://api.csm.ai",
-        ):
+        ) -> None:
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
 
-    def _handle_image_input(self, image):
+    def _handle_image_input(self, image) -> str:
         """Handles image input by converting it to a base64-encoded string.
 
         Parameters
@@ -361,19 +361,47 @@ class CSMClient:
             pivot_point=[0.0, 0.0, 0.0],
             refine_speed="fast",
             preview_model="fast_sculpt"
-        ):
+        ) -> ImageTo3DResult:
         """Generate a 3D mesh from an image.
+
+        The input image can be provided as a URL, a local path, or a :class:`PIL.Image.Image`.
 
         Parameters
         ----------
         image : str or PIL.Image.Image
-            The input image. May be provided as a URL, a local path, or a
-            :class:`PIL.Image.Image` instance.
+            The input image. May be provided as a URL, a local file path, or a 
+            :class:`PIL.Image.Image` instance to be converted into a 3D mesh.
+        generate_spin_video : bool, optional
+            If True, a spin video of the generated 3D mesh is created. Defaults to False.
+        mesh_format : str, optional
+            The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'. 
+            Defaults to 'obj'.
+        output : str, optional
+            The directory path where output files (mesh and video, if generated) 
+            will be saved. Defaults to the current directory.
+        timeout : int, optional
+            The maximum time (in seconds) to wait for the 3D mesh generation. 
+            Defaults to 200 seconds.
+        verbose : bool, optional
+            If True, outputs detailed progress information. Defaults to True.
+        scaled_bbox : list, optional
+            A 3-element list specifying the scaled bounding box for the generated 3D model.
+            Defaults to an empty list, meaning no custom bounding box.
+        pivot_point : list, optional
+            A 3-element list specifying the pivot point for the 3D model's orientation.
+            Defaults to [0.0, 0.0, 0.0].
+        refine_speed : str, optional
+            The refinement speed for the model generation process. Choices are 'fast' 
+            or 'slow'. Defaults to 'fast'.
+        preview_model : str, optional
+            The preview model type to use during 3D mesh creation. Choices are 
+            'fast_sculpt' or 'turbo'. Defaults to 'fast_sculpt'.
 
         Returns
         -------
         ImageTo3DResult
-            Result object. Contains the local path of the generated mesh file.
+            Result object. Contains the local path of the generated mesh file 
+            and session code.
         """
         if generate_spin_video:
             warnings.warn(
@@ -507,19 +535,50 @@ class CSMClient:
             pivot_point=[0.0, 0.0, 0.0],
             refine_speed="fast",
             preview_model="fast_sculpt"
-        ):
+        ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
 
         Parameters
         ----------
         prompt : str
-            The input text prompt.
+            The input text prompt to generate a 3D model based on text description.
+        style_id : str, optional
+            The style ID that influences the visual characteristics of the generated model.
+            Defaults to an empty string, meaning no specific style is applied.
+        guidance : int, optional
+            A parameter that adjusts guidance strength, affecting how closely 
+            the generation follows the input text. Default is 6.
+        generate_spin_video : bool, optional
+            If True, a spin video of the generated 3D mesh is created. Defaults to False.
+        mesh_format : str, optional
+            The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'.
+            Defaults to 'obj'.
+        output : str, optional
+            The directory path where output files (mesh and video, if generated) 
+            will be saved. Defaults to the current directory.
+        timeout : int, optional
+            The maximum time (in seconds) to wait for the 3D mesh generation. 
+            Defaults to 200 seconds.
+        verbose : bool, optional
+            If True, outputs detailed progress information. Defaults to True.
+        scaled_bbox : list, optional
+            A 3-element list specifying the scaled bounding box for the generated 3D model.
+            Defaults to an empty list, meaning no custom bounding box.
+        pivot_point : list, optional
+            A 3-element list specifying the pivot point for the 3D model's orientation.
+            Defaults to [0.0, 0.0, 0.0].
+        refine_speed : str, optional
+            The refinement speed for the model generation process. Choices are 'fast' 
+            or 'slow'. Defaults to 'fast'.
+        preview_model : str, optional
+            The preview model type to use during 3D mesh creation. Choices are 
+            'fast_sculpt' or 'turbo'. Defaults to 'fast_sculpt'.
 
         Returns
         -------
         TextTo3DResult
             Result object. Contains the local path of the generated mesh file,
-            as well as the image that was generated as part of the pipeline.
+            as well as the image generated as part of the pipeline, and session code.
         """
         os.makedirs(output, exist_ok=True)
 
