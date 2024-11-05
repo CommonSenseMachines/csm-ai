@@ -63,6 +63,7 @@ class BackendClient:
             *,
             generate_preview_mesh=False,
             auto_refine=False,
+            preview_model="fast_sculpt",
             ## refine args
             creativity="lowest",
             refine_speed="fast",
@@ -76,6 +77,7 @@ class BackendClient:
         assert refine_speed in ["slow", "fast"]
         assert polygon_count in ["low_poly", "high_poly"]
         assert topology in ["tris", "quads"]
+        assert preview_model in ["fast_sculpt", "turbo"]
         assert 128 <= texture_resolution <= 2048
 
         parameters = {
@@ -88,7 +90,8 @@ class BackendClient:
             "topology": topology,
             "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
-            "pivot_point": [float(s) for s in pivot_point]
+            "pivot_point": [float(s) for s in pivot_point],
+            "preview_model": preview_model,
         }
 
         if len(scaled_bbox) == 3:
@@ -266,7 +269,8 @@ class CSMClient:
             verbose=True,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
-            refine_speed="fast"
+            refine_speed="fast",
+            preview_model="fast_sculpt"
         ):
         r"""Generate a 3D mesh from an image.
 
@@ -304,6 +308,7 @@ class CSMClient:
             image_url,
             generate_preview_mesh=not generate_spin_video,
             auto_refine=False,
+            preview_model=preview_model,
             scaled_bbox=scaled_bbox,
             pivot_point=pivot_point,
             refine_speed=refine_speed
@@ -412,7 +417,8 @@ class CSMClient:
             verbose=True,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
-            refine_speed="fast"
+            refine_speed="fast",
+            preview_model="fast_sculpt"
         ):
         r"""Generate a 3D mesh from a text prompt.
 
@@ -481,7 +487,8 @@ class CSMClient:
             verbose=verbose,
             scaled_bbox=scaled_bbox,
             pivot_point=pivot_point,
-            refine_speed=refine_speed
+            refine_speed=refine_speed,
+            preview_model=preview_model
         )
 
         return TextTo3DResult(session_code=i23.session_code, mesh_path=i23.mesh_path, image_path=image_path)
