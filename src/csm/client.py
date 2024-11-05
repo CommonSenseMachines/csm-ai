@@ -275,6 +275,7 @@ class CSMClient:
         r"""Generate a 3D mesh from an image.
 
         The input image can be provided as a URL, a local path, or a :class:`PIL.Image.Image`.
+        The preview model can be set to either `fast_sculpt` or `turbo`.
 
         Parameters
         ----------
@@ -421,6 +422,8 @@ class CSMClient:
             preview_model="fast_sculpt"
         ):
         r"""Generate a 3D mesh from a text prompt.
+
+        The preview model can be set to either `fast_sculpt` or `turbo`.
 
         Parameters
         ----------
