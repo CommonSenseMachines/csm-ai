@@ -505,7 +505,7 @@ class CSMClient:
         # download mesh file based on the requested format
         if mesh_format == 'obj':
             mesh_url = result['data']['preview_mesh_url_zip']
-            mesh_file = 'mesh.zip'
+            mesh_file = 'mesh.obj' if preview_model == 'fast_sculpt' else 'mesh.zip'
         elif mesh_format == 'glb':
             mesh_url = result['data']['preview_mesh_url_glb']
             mesh_file = 'mesh.glb'
