@@ -81,7 +81,8 @@ class BackendClient:
             topology="tris",
             texture_resolution=2048,
             scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0]
+            pivot_point=[0.0, 0.0, 0.0],
+            **kwargs
         ) -> dict:
         """Creates an image-to-3D conversion session.
 
@@ -114,6 +115,7 @@ class BackendClient:
             "manual_segmentation": False,  # TODO: implement this option
             "pivot_point": [float(s) for s in pivot_point],
             "preview_mesh": preview_model,
+            **kwargs
         }
 
         if len(scaled_bbox) == 3:
@@ -360,7 +362,8 @@ class CSMClient:
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
             refine_speed="fast",
-            preview_model="fast_sculpt"
+            preview_model="fast_sculpt",
+            **kwargs
         ) -> ImageTo3DResult:
         """Generate a 3D mesh from an image.
 
@@ -427,7 +430,8 @@ class CSMClient:
             preview_model=preview_model,
             scaled_bbox=scaled_bbox,
             pivot_point=pivot_point,
-            refine_speed=refine_speed
+            refine_speed=refine_speed,
+            **kwargs
         )
 
         status = result['data']['status']
@@ -534,7 +538,8 @@ class CSMClient:
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
             refine_speed="fast",
-            preview_model="fast_sculpt"
+            preview_model="fast_sculpt",
+            **kwargs
         ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
 
@@ -635,7 +640,8 @@ class CSMClient:
             scaled_bbox=scaled_bbox,
             pivot_point=pivot_point,
             refine_speed=refine_speed,
-            preview_model=preview_model
+            preview_model=preview_model,
+            **kwargs
         )
 
         return TextTo3DResult(session_code=i23.session_code, mesh_path=i23.mesh_path, image_path=image_path)
