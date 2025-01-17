@@ -497,8 +497,6 @@ class CSMClient:
                 break
             elif status == 'preview_failed':
                 raise RuntimeError(f"Preview {step_label} failed.")
-            elif status != 'training_preview':
-                raise RuntimeError(f"Unexpected error during preview {step_label} (status='{status}')")
             run_time = time.time() - start_time
             if run_time >= timeout:
                 raise RuntimeError(f"Preview {step_label} timed out")
