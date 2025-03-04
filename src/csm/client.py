@@ -9,6 +9,9 @@ import PIL.Image
 from io import BytesIO
 
 
+_DEFAULT_TIMEOUT = 1000  # in seconds
+
+
 class BackendClient:
     """A backend client class for raw GET/POST requests to the REST API.
 
@@ -357,7 +360,7 @@ class CSMClient:
             generate_spin_video=False,
             mesh_format='obj',
             output='./',
-            timeout=200,
+            timeout=_DEFAULT_TIMEOUT,
             verbose=True,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
@@ -531,7 +534,7 @@ class CSMClient:
             generate_spin_video=False,
             mesh_format='obj',
             output='./',
-            timeout=200,
+            timeout=_DEFAULT_TIMEOUT,
             verbose=True,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
