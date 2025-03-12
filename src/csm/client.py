@@ -74,14 +74,14 @@ class BackendClient:
             self,
             image_url,
             *,
-            generate_preview_mesh=False,
-            auto_refine=False,
-            preview_model="fast_sculpt",
+            # generate_preview_mesh=False,
+            # auto_refine=False,
+            # preview_model="fast_sculpt",
             ## refine args
-            creativity="lowest",
-            refine_speed="fast",
-            polygon_count="high_poly",
-            topology="tris",
+            # creativity="lowest",
+            # refine_speed="fast",
+            # polygon_count="high_poly",
+            # topology="tris",
             texture_resolution=2048,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
@@ -99,11 +99,6 @@ class BackendClient:
         dict
             The response from the API containing session details.
         """
-        assert creativity in ["lowest", "moderate", "highest"]
-        assert refine_speed in ["slow", "fast"]
-        assert polygon_count in ["low_poly", "high_poly"]
-        assert topology in ["tris", "quads"]
-        assert preview_model in ["fast_sculpt", "turbo"]
         assert 128 <= texture_resolution <= 2048
 
         parameters = {
@@ -354,21 +349,23 @@ class CSMClient:
         return pil_image_to_x64(pil_image)
 
     def image_to_3d(
-            self,
-            image,
-            *,
-            generate_spin_video=False,
-            mesh_format='obj',
-            output='./',
-            timeout=_DEFAULT_TIMEOUT,
-            verbose=True,
-            scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0],
-            refine_speed="fast",
-            preview_model="fast_sculpt",
-            **kwargs
-        ) -> ImageTo3DResult:
-        """Generate a 3D mesh from an image.
+        self,
+        image,
+        *,
+        generate_spin_video=False,
+        preview_mesh=False,
+        mesh_format='obj',
+        output='./',
+        timeout=_DEFAULT_TIMEOUT,
+        verbose=True,
+        scaled_bbox=[],
+        pivot_point=[0.0, 0.0, 0.0],
+        refine_speed="fast",
+        preview_model="fast_sculpt",
+        **kwargs
+    ) -> ImageTo3DResult:
+        """
+        Generate a 3D mesh from an image.
 
         The input image can be provided as a URL, a local path, or a :class:`PIL.Image.Image`.
 
@@ -376,43 +373,34 @@ class CSMClient:
         ----------
         image : str or PIL.Image.Image
             The input image. May be provided as a URL, a local file path, or a 
-            :class:`PIL.Image.Image` instance to be converted into a 3D mesh.
-        generate_spin_video : bool, optional
-            If True, a spin video of the generated 3D mesh is created. Defaults to False.
+            :class:`PIL.Image.Image` instance.
         mesh_format : str, optional
             The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'. 
             Defaults to 'obj'.
         output : str, optional
-            The directory path where output files (mesh and video, if generated) 
-            will be saved. Defaults to the current directory.
+            The directory path where output files will be saved.
         timeout : int, optional
-            The maximum time (in seconds) to wait for the 3D mesh generation. 
-            Defaults to 200 seconds.
+            The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
-            If True, outputs detailed progress information. Defaults to True.
+            If True, outputs detailed progress information.
         scaled_bbox : list, optional
             A 3-element list specifying the scaled bounding box for the generated 3D model.
-            Defaults to an empty list, meaning no custom bounding box.
         pivot_point : list, optional
             A 3-element list specifying the pivot point for the 3D model's orientation.
-            Defaults to [0.0, 0.0, 0.0].
-        refine_speed : str, optional
-            The refinement speed for the model generation process. Choices are 'fast' 
-            or 'slow'. Defaults to 'fast'.
-        preview_model : str, optional
-            The preview model type to use during 3D mesh creation. Choices are 
-            'fast_sculpt' or 'turbo'. Defaults to 'fast_sculpt'.
 
         Returns
         -------
         ImageTo3DResult
-            Result object. Contains the local path of the generated mesh file 
-            and session code.
+            Result object containing the local path of the generated mesh file and session code.
         """
         if generate_spin_video:
-            warnings.warn(
-                "The option `generate_spin_video=True` is deprecated and will be removed "
-                "in a future release", DeprecationWarning)
+            warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
+        if preview_mesh:
+            warnings.warn("The option for `preview_mesh` has been deprecated and has been removed.", DeprecationWarning)
+        if refine_speed:
+            warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
+        if preview_model:
+            warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
 
         mesh_format = mesh_format.lower()
         if mesh_format not in ['obj', 'glb', 'usdz']:
