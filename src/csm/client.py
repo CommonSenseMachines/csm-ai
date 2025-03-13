@@ -74,7 +74,6 @@ class BackendClient:
             self,
             image_url,
             *,
-            texture_resolution=2048,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
             **kwargs
@@ -91,11 +90,9 @@ class BackendClient:
         dict
             The response from the API containing session details.
         """
-        assert 128 <= texture_resolution <= 2048
 
         parameters = {
             "image_url": image_url,
-            "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
             "pivot_point": [float(s) for s in pivot_point],
             **kwargs
