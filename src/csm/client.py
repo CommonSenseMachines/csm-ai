@@ -337,16 +337,12 @@ class CSMClient:
         self,
         image,
         *,
-        generate_spin_video=False,
-        preview_mesh=False,
         mesh_format='obj',
         output='./',
         timeout=_DEFAULT_TIMEOUT,
         verbose=True,
         scaled_bbox=[],
         pivot_point=[0.0, 0.0, 0.0],
-        refine_speed="fast",
-        preview_model="fast_sculpt",
         **kwargs
     ) -> ImageTo3DResult:
         """
@@ -378,13 +374,13 @@ class CSMClient:
         ImageTo3DResult
             Result object containing the local path of the generated mesh file and session code.
         """
-        if generate_spin_video:
+        if kwargs.pop('generate_spin_video', None) is not None:
             warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
-        if preview_mesh:
+        if kwargs.pop('preview_mesh', None) is not None:
             warnings.warn("The option for `preview_mesh` has been deprecated and has been removed.", DeprecationWarning)
-        if refine_speed:
+        if kwargs.pop('refine_speed', None) is not None:
             warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
-        if preview_model:
+        if kwargs.pop('preview_model', None) is not None:
             warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
 
         mesh_format = mesh_format.lower()
@@ -463,15 +459,12 @@ class CSMClient:
             *,
             style_id="",
             guidance=6,
-            generate_spin_video=False,
             mesh_format='obj',
             output='./',
             timeout=_DEFAULT_TIMEOUT,
             verbose=True,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
-            refine_speed="fast",
-            preview_model="fast_sculpt",
             **kwargs
         ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
@@ -510,11 +503,11 @@ class CSMClient:
             Result object. Contains the local path of the generated mesh file,
             as well as the image generated as part of the pipeline, and session code.
         """
-        if generate_spin_video:
+        if kwargs.pop('generate_spin_video', None) is not None:
             warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
-        if refine_speed:
+        if kwargs.pop('refine_speed', None) is not None:
             warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
-        if preview_model:
+        if kwargs.pop('preview_model', None) is not None:
             warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
 
         os.makedirs(output, exist_ok=True)
