@@ -75,7 +75,7 @@ class BackendClient:
             image_url,
             *,
             texture_resolution=2048,
-            scaled_bbox=[-1, -1, -1],
+            scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
             **kwargs
         ) -> dict:
