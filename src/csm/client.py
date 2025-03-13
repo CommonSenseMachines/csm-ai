@@ -367,7 +367,7 @@ class CSMClient:
         timeout : int, optional
             The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
-            If True, outputs detailed progress information.
+            If True, outputs detailed progress information. Defaults to True.
         scaled_bbox : list, optional
             A 3-element list specifying the scaled bounding box for the generated 3D model.
         pivot_point : list, optional
