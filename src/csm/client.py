@@ -403,7 +403,7 @@ class CSMClient:
         )
 
         session_status = result['data'].get('session_status')
-        if not session_status: # TODO: Remove after debugging
+        if not session_status:
             session_status = result['data']['status']
         if session_status == 'failed':
             raise RuntimeError(f"Image-to-3d session creation failed (session status='{session_status}')")
