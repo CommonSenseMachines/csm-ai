@@ -74,15 +74,6 @@ class BackendClient:
             self,
             image_url,
             *,
-            generate_preview_mesh=False,
-            auto_refine=False,
-            preview_model="fast_sculpt",
-            ## refine args
-            creativity="lowest",
-            refine_speed="fast",
-            polygon_count="high_poly",
-            topology="tris",
-            texture_resolution=2048,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
             **kwargs
@@ -99,25 +90,11 @@ class BackendClient:
         dict
             The response from the API containing session details.
         """
-        assert creativity in ["lowest", "moderate", "highest"]
-        assert refine_speed in ["slow", "fast"]
-        assert polygon_count in ["low_poly", "high_poly"]
-        assert topology in ["tris", "quads"]
-        assert preview_model in ["fast_sculpt", "turbo"]
-        assert 128 <= texture_resolution <= 2048
 
         parameters = {
             "image_url": image_url,
-            "generate_preview_mesh": generate_preview_mesh,
-            "creativity": creativity,
-            "refine_speed": refine_speed,
-            "resolution": polygon_count,
-            "auto_refine": auto_refine,
-            "topology": topology,
-            "texture_resolution": texture_resolution,
             "manual_segmentation": False,  # TODO: implement this option
             "pivot_point": [float(s) for s in pivot_point],
-            "preview_mesh": preview_model,
             **kwargs
         }
 
@@ -354,21 +331,19 @@ class CSMClient:
         return pil_image_to_x64(pil_image)
 
     def image_to_3d(
-            self,
-            image,
-            *,
-            generate_spin_video=False,
-            mesh_format='obj',
-            output='./',
-            timeout=_DEFAULT_TIMEOUT,
-            verbose=True,
-            scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0],
-            refine_speed="fast",
-            preview_model="fast_sculpt",
-            **kwargs
-        ) -> ImageTo3DResult:
-        """Generate a 3D mesh from an image.
+        self,
+        image,
+        *,
+        mesh_format='obj',
+        output='./',
+        timeout=_DEFAULT_TIMEOUT,
+        verbose=True,
+        scaled_bbox=[],
+        pivot_point=[0.0, 0.0, 0.0],
+        **kwargs
+    ) -> ImageTo3DResult:
+        """
+        Generate a 3D mesh from an image.
 
         The input image can be provided as a URL, a local path, or a :class:`PIL.Image.Image`.
 
@@ -376,43 +351,34 @@ class CSMClient:
         ----------
         image : str or PIL.Image.Image
             The input image. May be provided as a URL, a local file path, or a 
-            :class:`PIL.Image.Image` instance to be converted into a 3D mesh.
-        generate_spin_video : bool, optional
-            If True, a spin video of the generated 3D mesh is created. Defaults to False.
+            :class:`PIL.Image.Image` instance.
         mesh_format : str, optional
             The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'. 
             Defaults to 'obj'.
         output : str, optional
-            The directory path where output files (mesh and video, if generated) 
-            will be saved. Defaults to the current directory.
+            The directory path where output files will be saved.
         timeout : int, optional
-            The maximum time (in seconds) to wait for the 3D mesh generation. 
-            Defaults to 200 seconds.
+            The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
         scaled_bbox : list, optional
             A 3-element list specifying the scaled bounding box for the generated 3D model.
-            Defaults to an empty list, meaning no custom bounding box.
         pivot_point : list, optional
             A 3-element list specifying the pivot point for the 3D model's orientation.
-            Defaults to [0.0, 0.0, 0.0].
-        refine_speed : str, optional
-            The refinement speed for the model generation process. Choices are 'fast' 
-            or 'slow'. Defaults to 'fast'.
-        preview_model : str, optional
-            The preview model type to use during 3D mesh creation. Choices are 
-            'fast_sculpt' or 'turbo'. Defaults to 'fast_sculpt'.
 
         Returns
         -------
         ImageTo3DResult
-            Result object. Contains the local path of the generated mesh file 
-            and session code.
+            Result object containing the local path of the generated mesh file and session code.
         """
-        if generate_spin_video:
-            warnings.warn(
-                "The option `generate_spin_video=True` is deprecated and will be removed "
-                "in a future release", DeprecationWarning)
+        if kwargs.pop('generate_spin_video', None) is not None:
+            warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
+        if kwargs.pop('preview_mesh', None) is not None:
+            warnings.warn("The option for `preview_mesh` has been deprecated and has been removed.", DeprecationWarning)
+        if kwargs.pop('refine_speed', None) is not None:
+            warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
+        if kwargs.pop('preview_model', None) is not None:
+            warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
 
         mesh_format = mesh_format.lower()
         if mesh_format not in ['obj', 'glb', 'usdz']:
@@ -428,68 +394,27 @@ class CSMClient:
         # initialize session
         result = self.backend.create_image_to_3d_session(
             image_url,
-            generate_preview_mesh=not generate_spin_video,
-            auto_refine=False,
-            preview_model=preview_model,
             scaled_bbox=scaled_bbox,
             pivot_point=pivot_point,
-            refine_speed=refine_speed,
             **kwargs
         )
 
-        status = result['data']['status']
-        if (
-            (generate_spin_video and status not in ["spin_generate_processing", "spin_generate_done"]) or
-            (not generate_spin_video and status not in ["training_preview", "preview_done"])
-            ):
-            raise RuntimeError(f"Image-to-3d session creation failed (status='{status}')")
+        session_status = result['data'].get('session_status')
+        if not session_status:
+            session_status = result['data']['status']
+        if session_status == 'failed':
+            raise RuntimeError(f"Image-to-3d session creation failed (session status='{session_status}')")
 
         session_code = result['data']['session_code']
 
-        step_label = "spin generation" if generate_spin_video else "mesh generation"
+        step_label = "mesh generation"
 
         if verbose:
             print(f'[INFO] Image-to-3d session created ({session_code})')
 
-        if generate_spin_video:
-            if verbose:
-                print(f'[INFO] Running preview {step_label}...')
-
-            # wait for preview spin generation to complete (20-30s)
-            start_time = time.time()
-            run_time = 0.
-            while True:
-                time.sleep(2)
-                result = self.backend.get_image_to_3d_session_info(session_code)
-                status = result['data']['status']
-                if status == 'spin_generate_done':
-                    break
-                elif status == 'spin_generate_failed':
-                    raise RuntimeError(f"Preview {step_label} failed")
-                elif status != 'spin_generate_processing':
-                    raise RuntimeError(f"Unexpected error during preview {step_label} (status='{status}')")
-                run_time = time.time() - start_time
-                if run_time >= timeout:
-                    raise RuntimeError(f"Preview {step_label} timed out")
-            
-            if verbose:
-                print(f'[INFO] Preview {step_label} completed in {run_time:.1f}s')
-
-            spin_url = result['data']['spins'][0]["image_url"]
-
-            # launch preview mesh export
-            result = self.backend.get_3d_preview(
-                session_code,
-                spin_url=spin_url,
-                scaled_bbox=scaled_bbox,
-                pivot_point=pivot_point
-            )
-            step_label = "mesh export"
-
         if verbose:
-            print(f'[INFO] Running preview {step_label}...')
+            print(f'[INFO] Running {step_label}...')
 
-        # wait for preview mesh export to complete (20-30s)
         start_time = time.time()
         run_time = 0.
         while True:
@@ -499,18 +424,18 @@ class CSMClient:
             if status == 'preview_done':
                 break
             elif status == 'preview_failed':
-                raise RuntimeError(f"Preview {step_label} failed.")
+                raise RuntimeError(f"Error: {step_label} failed.")
             run_time = time.time() - start_time
             if run_time >= timeout:
-                raise RuntimeError(f"Preview {step_label} timed out")
+                raise RuntimeError(f"Error: {step_label} timed out")
             
         if verbose:
             print(f'[INFO] Preview {step_label} completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
         if mesh_format == 'obj':
-            mesh_url = result['data']['preview_mesh_url_zip']
-            mesh_file = 'mesh.obj' if preview_model == 'fast_sculpt' else 'mesh.zip'
+            mesh_url = result['data']['preview_mesh_url']
+            mesh_file = 'mesh.obj'
         elif mesh_format == 'glb':
             mesh_url = result['data']['preview_mesh_url_glb']
             mesh_file = 'mesh.glb'
@@ -531,15 +456,12 @@ class CSMClient:
             *,
             style_id="",
             guidance=6,
-            generate_spin_video=False,
             mesh_format='obj',
             output='./',
             timeout=_DEFAULT_TIMEOUT,
             verbose=True,
             scaled_bbox=[],
             pivot_point=[0.0, 0.0, 0.0],
-            refine_speed="fast",
-            preview_model="fast_sculpt",
             **kwargs
         ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
@@ -554,8 +476,6 @@ class CSMClient:
         guidance : int, optional
             A parameter that adjusts guidance strength, affecting how closely 
             the generation follows the input text. Default is 6.
-        generate_spin_video : bool, optional
-            If True, a spin video of the generated 3D mesh is created. Defaults to False.
         mesh_format : str, optional
             The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'.
             Defaults to 'obj'.
@@ -569,16 +489,10 @@ class CSMClient:
             If True, outputs detailed progress information. Defaults to True.
         scaled_bbox : list, optional
             A 3-element list specifying the scaled bounding box for the generated 3D model.
-            Defaults to an empty list, meaning no custom bounding box.
+            Defaults to an empty list, meaning no scaled bounding box.
         pivot_point : list, optional
             A 3-element list specifying the pivot point for the 3D model's orientation.
             Defaults to [0.0, 0.0, 0.0].
-        refine_speed : str, optional
-            The refinement speed for the model generation process. Choices are 'fast' 
-            or 'slow'. Defaults to 'fast'.
-        preview_model : str, optional
-            The preview model type to use during 3D mesh creation. Choices are 
-            'fast_sculpt' or 'turbo'. Defaults to 'fast_sculpt'.
 
         Returns
         -------
@@ -586,6 +500,13 @@ class CSMClient:
             Result object. Contains the local path of the generated mesh file,
             as well as the image generated as part of the pipeline, and session code.
         """
+        if kwargs.pop('generate_spin_video', None) is not None:
+            warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
+        if kwargs.pop('refine_speed', None) is not None:
+            warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
+        if kwargs.pop('preview_model', None) is not None:
+            warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
+
         os.makedirs(output, exist_ok=True)
 
         # initialize text-to-image session
@@ -633,15 +554,12 @@ class CSMClient:
         # launch image-to-3d
         i23 = self.image_to_3d(
             image_url,
-            generate_spin_video=generate_spin_video,
             mesh_format=mesh_format,
             output=output,
             timeout=timeout,
             verbose=verbose,
             scaled_bbox=scaled_bbox,
             pivot_point=pivot_point,
-            refine_speed=refine_speed,
-            preview_model=preview_model,
             **kwargs
         )
 
