@@ -81,6 +81,10 @@ class BackendClient:
         ----------
         image_url : str
             URL of the image to convert into a 3D model.
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
         
         Returns
         -------
@@ -290,6 +294,10 @@ class CSMClient:
             The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
 
         Returns
         -------
@@ -408,6 +416,10 @@ class CSMClient:
             Defaults to 200 seconds.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
 
         Returns
         -------
