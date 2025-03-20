@@ -130,68 +130,6 @@ class BackendClient:
         self._check_http_response(response)  # expected=200
 
         return response.json()
-    
-    def get_3d_refine(self, session_code, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]) -> dict:
-        """Requests refinement for an existing 3D model.
-
-        Parameters
-        ----------
-        session_code : str
-            The session code of the 3D model to refine.
-        
-        Returns
-        -------
-        dict
-            The response from the API with refinement results.
-        """
-        parameters = {"pivot_point": [s for s in pivot_point]}
-        if len(scaled_bbox) == 3:
-            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
-        response = requests.post(
-            url=f"{self.base_url}/image-to-3d-sessions/get-3d/refine/{session_code}",
-            json=parameters,
-            headers=self.headers,
-        )
-
-        return response.json()
-    
-    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]) -> dict:
-        """Fetches a preview of the generated 3D model.
-
-        Parameters
-        ----------
-        session_code : str
-            The session code of the 3D model to preview.
-        
-        Returns
-        -------
-        dict
-            The response from the API with preview data.
-        """
-        selected_spin_index = 0
-
-        if spin_url is None:
-            result = self.get_image_to_3d_session_info(session_code)
-            spin_url = result['data']['spins'][selected_spin_index]["image_url"]
-
-        parameters = {
-            "selected_spin_index": selected_spin_index,
-            "selected_spin": spin_url,
-            "pivot_point": [s for s in pivot_point]
-        }
-
-        if len(scaled_bbox) == 3:
-            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
-
-        response = requests.post(
-            url=f"{self.base_url}/image-to-3d-sessions/get-3d/preview/{session_code}",
-            json=parameters,
-            headers=self.headers,
-            timeout=100,
-        )
-        self._check_http_response(response)  # expected=200
-
-        return response.json()
 
     # text-to-image API methods
     # -------------------------------------------
