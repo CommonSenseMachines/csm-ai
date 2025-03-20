@@ -73,9 +73,6 @@ class BackendClient:
     def create_image_to_3d_session(
             self,
             image_url,
-            *,
-            scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0],
             **kwargs
         ) -> dict:
         """Creates an image-to-3D conversion session.
@@ -84,6 +81,10 @@ class BackendClient:
         ----------
         image_url : str
             URL of the image to convert into a 3D model.
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
         
         Returns
         -------
@@ -94,12 +95,8 @@ class BackendClient:
         parameters = {
             "image_url": image_url,
             "manual_segmentation": False,  # TODO: implement this option
-            "pivot_point": [float(s) for s in pivot_point],
             **kwargs
         }
-
-        if len(scaled_bbox) == 3:
-            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
 
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions",
@@ -126,68 +123,6 @@ class BackendClient:
         response = requests.get(
             url=f"{self.base_url}/image-to-3d-sessions/{session_code}",
             headers=self.headers,
-        )
-        self._check_http_response(response)  # expected=200
-
-        return response.json()
-    
-    def get_3d_refine(self, session_code, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]) -> dict:
-        """Requests refinement for an existing 3D model.
-
-        Parameters
-        ----------
-        session_code : str
-            The session code of the 3D model to refine.
-        
-        Returns
-        -------
-        dict
-            The response from the API with refinement results.
-        """
-        parameters = {"pivot_point": [s for s in pivot_point]}
-        if len(scaled_bbox) == 3:
-            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
-        response = requests.post(
-            url=f"{self.base_url}/image-to-3d-sessions/get-3d/refine/{session_code}",
-            json=parameters,
-            headers=self.headers,
-        )
-
-        return response.json()
-    
-    def get_3d_preview(self, session_code, spin_url=None, scaled_bbox=[], pivot_point=[0.0, 0.0, 0.0]) -> dict:
-        """Fetches a preview of the generated 3D model.
-
-        Parameters
-        ----------
-        session_code : str
-            The session code of the 3D model to preview.
-        
-        Returns
-        -------
-        dict
-            The response from the API with preview data.
-        """
-        selected_spin_index = 0
-
-        if spin_url is None:
-            result = self.get_image_to_3d_session_info(session_code)
-            spin_url = result['data']['spins'][selected_spin_index]["image_url"]
-
-        parameters = {
-            "selected_spin_index": selected_spin_index,
-            "selected_spin": spin_url,
-            "pivot_point": [s for s in pivot_point]
-        }
-
-        if len(scaled_bbox) == 3:
-            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
-
-        response = requests.post(
-            url=f"{self.base_url}/image-to-3d-sessions/get-3d/preview/{session_code}",
-            json=parameters,
-            headers=self.headers,
-            timeout=100,
         )
         self._check_http_response(response)  # expected=200
 
@@ -338,8 +273,6 @@ class CSMClient:
         output='./',
         timeout=_DEFAULT_TIMEOUT,
         verbose=True,
-        scaled_bbox=[],
-        pivot_point=[0.0, 0.0, 0.0],
         **kwargs
     ) -> ImageTo3DResult:
         """
@@ -361,10 +294,10 @@ class CSMClient:
             The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
-        scaled_bbox : list, optional
-            A 3-element list specifying the scaled bounding box for the generated 3D model.
-        pivot_point : list, optional
-            A 3-element list specifying the pivot point for the 3D model's orientation.
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
 
         Returns
         -------
@@ -394,8 +327,6 @@ class CSMClient:
         # initialize session
         result = self.backend.create_image_to_3d_session(
             image_url,
-            scaled_bbox=scaled_bbox,
-            pivot_point=pivot_point,
             **kwargs
         )
 
@@ -460,8 +391,6 @@ class CSMClient:
             output='./',
             timeout=_DEFAULT_TIMEOUT,
             verbose=True,
-            scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0],
             **kwargs
         ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
@@ -487,12 +416,10 @@ class CSMClient:
             Defaults to 200 seconds.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
-        scaled_bbox : list, optional
-            A 3-element list specifying the scaled bounding box for the generated 3D model.
-            Defaults to an empty list, meaning no scaled bounding box.
-        pivot_point : list, optional
-            A 3-element list specifying the pivot point for the 3D model's orientation.
-            Defaults to [0.0, 0.0, 0.0].
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
 
         Returns
         -------
@@ -558,8 +485,6 @@ class CSMClient:
             output=output,
             timeout=timeout,
             verbose=verbose,
-            scaled_bbox=scaled_bbox,
-            pivot_point=pivot_point,
             **kwargs
         )
 
