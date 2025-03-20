@@ -73,9 +73,6 @@ class BackendClient:
     def create_image_to_3d_session(
             self,
             image_url,
-            *,
-            scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0],
             **kwargs
         ) -> dict:
         """Creates an image-to-3D conversion session.
@@ -94,12 +91,8 @@ class BackendClient:
         parameters = {
             "image_url": image_url,
             "manual_segmentation": False,  # TODO: implement this option
-            "pivot_point": [float(s) for s in pivot_point],
             **kwargs
         }
-
-        if len(scaled_bbox) == 3:
-            parameters["scaled_bbox"] = [float(s) for s in scaled_bbox]
 
         response = requests.post(
             url=f"{self.base_url}/image-to-3d-sessions",
@@ -276,8 +269,6 @@ class CSMClient:
         output='./',
         timeout=_DEFAULT_TIMEOUT,
         verbose=True,
-        scaled_bbox=[],
-        pivot_point=[0.0, 0.0, 0.0],
         **kwargs
     ) -> ImageTo3DResult:
         """
@@ -299,10 +290,6 @@ class CSMClient:
             The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
-        scaled_bbox : list, optional
-            A 3-element list specifying the scaled bounding box for the generated 3D model.
-        pivot_point : list, optional
-            A 3-element list specifying the pivot point for the 3D model's orientation.
 
         Returns
         -------
@@ -332,8 +319,6 @@ class CSMClient:
         # initialize session
         result = self.backend.create_image_to_3d_session(
             image_url,
-            scaled_bbox=scaled_bbox,
-            pivot_point=pivot_point,
             **kwargs
         )
 
@@ -398,8 +383,6 @@ class CSMClient:
             output='./',
             timeout=_DEFAULT_TIMEOUT,
             verbose=True,
-            scaled_bbox=[],
-            pivot_point=[0.0, 0.0, 0.0],
             **kwargs
         ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
@@ -425,12 +408,6 @@ class CSMClient:
             Defaults to 200 seconds.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to True.
-        scaled_bbox : list, optional
-            A 3-element list specifying the scaled bounding box for the generated 3D model.
-            Defaults to an empty list, meaning no scaled bounding box.
-        pivot_point : list, optional
-            A 3-element list specifying the pivot point for the 3D model's orientation.
-            Defaults to [0.0, 0.0, 0.0].
 
         Returns
         -------
@@ -496,8 +473,6 @@ class CSMClient:
             output=output,
             timeout=timeout,
             verbose=verbose,
-            scaled_bbox=scaled_bbox,
-            pivot_point=pivot_point,
             **kwargs
         )
 
