@@ -230,13 +230,28 @@ class CSMClient:
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
+    verbose : bool
+        If True, the client outputs detailed progress information. Verbosity
+        can also be specified per-session with method argument `verbose`.
+        Defaults to True.
     """
     def __init__(
             self,
             api_key=None,
             base_url="https://api.csm.ai",
+            verbose=True,
         ) -> None:
         self.backend = BackendClient(api_key=api_key, base_url=base_url)
+        self.verbose = verbose
+        self._set_verbosity()
+
+    def _set_verbosity(self, verbose=None):
+        self._verbose = self.verbose if verbose is None else verbose
+
+    def log(self, message):
+        if self._verbose:
+            #print(f'[INFO] {message}')
+            print(f'[{type(self).__name__}] {message}')
 
     def _handle_image_input(self, image) -> str:
         """Handles image input by converting it to a base64-encoded string.
@@ -272,7 +287,7 @@ class CSMClient:
         mesh_format='obj',
         output='./',
         timeout=_DEFAULT_TIMEOUT,
-        verbose=True,
+        verbose=None,
         **kwargs
     ) -> ImageTo3DResult:
         """
@@ -293,7 +308,7 @@ class CSMClient:
         timeout : int, optional
             The maximum time (in seconds) to wait for the 3D mesh generation.
         verbose : bool, optional
-            If True, outputs detailed progress information. Defaults to True.
+            If True, outputs detailed progress information. Defaults to `self.verbose`.
         **kwargs : dict, optional
             Additional parameters for customizing the image-to-3D process.
             For a complete list of supported options, see the REST API documentation:
@@ -304,6 +319,8 @@ class CSMClient:
         ImageTo3DResult
             Result object containing the local path of the generated mesh file and session code.
         """
+        self._set_verbosity(verbose)
+
         if kwargs.pop('generate_spin_video', None) is not None:
             warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
         if kwargs.pop('preview_mesh', None) is not None:
@@ -335,39 +352,32 @@ class CSMClient:
             raise RuntimeError(f"Image-to-3d session creation failed (session status='{status}')")
 
         session_code = result['data']['session_code']
+        self.log(f'Image-to-3d session created ({session_code})')
 
-        step_label = "mesh generation"
-
-        if verbose:
-            print(f'[INFO] Image-to-3d session created ({session_code})')
-
-        if verbose:
-            print(f'[INFO] Running {step_label}...')
-
+        # poll session until complete
+        self.log(f'Running image-to-3d...')
         start_time = time.time()
         run_time = 0.
         while True:
             time.sleep(2)
             result = self.backend.get_image_to_3d_session_info(session_code)
             status = result['data']['session_status']
-            if verbose:
-                percent_done = result['data'].get('percent_done', 'N/A')
-                print(f'[INFO] {session_code}: status="{status}", progress={percent_done}%')
+            percent_done = result['data'].get('percent_done', 'N/A')
+            self.log(f'{session_code}: status="{status}", progress={percent_done}%')
 
             if status == 'complete':
                 break
             elif status == 'failed':
-                raise RuntimeError(f"Error: {step_label} failed.")
+                raise RuntimeError(f"image-to-3d failed.")
 
             # TODO: check remaining status values?
             #assert status in ['queued', 'in_progress']
 
             run_time = time.time() - start_time
             if run_time >= timeout:
-                raise RuntimeError(f"Error: {step_label} timed out")
+                raise RuntimeError(f"image-to-3d timed out")
 
-        if verbose:
-            print(f'[INFO] {step_label} completed in {run_time:.1f}s')
+        self.log(f'image-to-3d completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
         if mesh_format == 'obj':
@@ -396,7 +406,7 @@ class CSMClient:
             mesh_format='obj',
             output='./',
             timeout=_DEFAULT_TIMEOUT,
-            verbose=True,
+            verbose=None,
             **kwargs
         ) -> TextTo3DResult:
         """Generate a 3D mesh from a text prompt.
@@ -421,7 +431,7 @@ class CSMClient:
             The maximum time (in seconds) to wait for the 3D mesh generation. 
             Defaults to 200 seconds.
         verbose : bool, optional
-            If True, outputs detailed progress information. Defaults to True.
+            If True, outputs detailed progress information. Defaults to `self.verbose`.
         **kwargs : dict, optional
             Additional parameters for customizing the image-to-3D process.
             For a complete list of supported options, see the REST API documentation:
@@ -433,6 +443,8 @@ class CSMClient:
             Result object. Contains the local path of the generated mesh file,
             as well as the image generated as part of the pipeline, and session code.
         """
+        self._set_verbosity(verbose)
+
         if kwargs.pop('generate_spin_video', None) is not None:
             warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
         if kwargs.pop('refine_speed', None) is not None:
@@ -454,12 +466,10 @@ class CSMClient:
             raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
 
         session_code = result['data']['session_code']
-
-        if verbose:
-            print(f'[INFO] Text-to-image session created ({session_code})')
-            print(f'[INFO] Running text-to-image generation...')
+        self.log(f'Text-to-image session created ({session_code})')
 
         # wait for image generation to complete
+        self.log(f'Running text-to-image...')
         start_time = time.time()
         run_time = 0.
         while True:
@@ -472,10 +482,9 @@ class CSMClient:
                 raise RuntimeError(f"Unexpected error during text-to-image generation (status='{status}')")
             run_time = time.time() - start_time
             if run_time >= timeout:
-                raise RuntimeError("Text-to-image generation timed out")
+                raise RuntimeError("text-to-image timed out")
 
-        if verbose:
-            print(f'[INFO] Text-to-image generation completed in {run_time:.1f}s')
+        self.log(f'text-to-image completed in {run_time:.1f}s')
 
         # access the image URL
         image_url = result['data']['image_url']
@@ -490,7 +499,6 @@ class CSMClient:
             mesh_format=mesh_format,
             output=output,
             timeout=timeout,
-            verbose=verbose,
             **kwargs
         )
 
