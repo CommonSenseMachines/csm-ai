@@ -285,7 +285,7 @@ class CSMClient:
         self,
         image,
         *,
-        mesh_format='obj',
+        mesh_format='glb',
         output='./',
         timeout=_DEFAULT_TIMEOUT,
         verbose=None,
@@ -303,7 +303,7 @@ class CSMClient:
             :class:`PIL.Image.Image` instance.
         mesh_format : str, optional
             The format of the output 3D mesh file. Choices are ['obj', 'glb', 'fbx', 'usdz'].
-            Defaults to 'obj'.
+            Defaults to 'glb'.
         output : str, optional
             The directory path where output files will be saved.
         timeout : int, optional
@@ -396,7 +396,7 @@ class CSMClient:
             *,
             style_id="",
             guidance=6,
-            mesh_format='obj',
+            mesh_format='glb',
             output='./',
             timeout=_DEFAULT_TIMEOUT,
             verbose=None,
@@ -416,7 +416,7 @@ class CSMClient:
             the generation follows the input text. Default is 6.
         mesh_format : str, optional
             The format of the output 3D mesh file. Choices are ['obj', 'glb', 'fbx', 'usdz'].
-            Defaults to 'obj'.
+            Defaults to 'glb'.
         output : str, optional
             The directory path where output files (mesh and video, if generated) 
             will be saved. Defaults to the current directory.
