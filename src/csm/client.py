@@ -301,7 +301,7 @@ class CSMClient:
             The input image. May be provided as a URL, a local file path, or a 
             :class:`PIL.Image.Image` instance.
         mesh_format : str, optional
-            The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'. 
+            The format of the output 3D mesh file. Choices are ['obj', 'glb', 'fbx', 'usdz'].
             Defaults to 'obj'.
         output : str, optional
             The directory path where output files will be saved.
@@ -331,10 +331,11 @@ class CSMClient:
             warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
 
         mesh_format = mesh_format.lower()
-        if mesh_format not in ['obj', 'glb', 'usdz']:
+        allowed_formats = ['obj', 'zip', 'glb', 'fbx', 'usdz']
+        if mesh_format not in allowed_formats:
             raise ValueError(
                 f"Unexpected mesh_format value ('{mesh_format}'). Please choose "
-                f"from options ['obj', 'glb', 'usdz']."
+                f"from options {allowed_formats}."
             )
 
         image_url = self._handle_image_input(image)
@@ -380,18 +381,8 @@ class CSMClient:
         self.log(f'image-to-3d completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
-        if mesh_format == 'obj':
-            mesh_url = result['data']['preview_mesh_url']
-            mesh_file = 'mesh.obj'
-        elif mesh_format == 'glb':
-            mesh_url = result['data']['preview_mesh_url_glb']
-            mesh_file = 'mesh.glb'
-        elif mesh_format == 'usdz':
-            mesh_url = result['data']['preview_mesh_url_usdz']
-            mesh_file = 'mesh.usdz'
-        else:
-            raise ValueError(f"Encountered unexpected mesh_format value ('{mesh_format}').")
-
+        mesh_url = result['data'][f'mesh_url_{mesh_format}']
+        mesh_file = f'mesh.{mesh_format}'
         mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
         urlretrieve(mesh_url, mesh_path)
 
@@ -422,7 +413,7 @@ class CSMClient:
             A parameter that adjusts guidance strength, affecting how closely 
             the generation follows the input text. Default is 6.
         mesh_format : str, optional
-            The format of the output 3D mesh file. Choices are 'obj', 'glb', or 'usdz'.
+            The format of the output 3D mesh file. Choices are ['obj', 'glb', 'fbx', 'usdz'].
             Defaults to 'obj'.
         output : str, optional
             The directory path where output files (mesh and video, if generated) 

@@ -32,6 +32,6 @@ Run text-to-3d inference:
     print(result.mesh_path)
 
 
-**Mesh formats:** Choose any of ['obj', 'glb', 'usdz'] for the `mesh_format` argument.
+**Mesh formats:** Choose any of ['obj', 'glb', 'fbx', 'usdz'] for the `mesh_format` argument.
 
 **Verbose mode:** Run client functions with option `verbose=True` (the default) to see additional status messages and logs.
