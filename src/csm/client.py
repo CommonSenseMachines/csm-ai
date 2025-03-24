@@ -330,11 +330,9 @@ class CSMClient:
             **kwargs
         )
 
-        session_status = result['data'].get('session_status')
-        if not session_status:
-            session_status = result['data']['status']
-        if session_status == 'failed':
-            raise RuntimeError(f"Image-to-3d session creation failed (session status='{session_status}')")
+        status = result['data']['session_status']
+        if status == 'failed':
+            raise RuntimeError(f"Image-to-3d session creation failed (session status='{status}')")
 
         session_code = result['data']['session_code']
 
@@ -351,17 +349,25 @@ class CSMClient:
         while True:
             time.sleep(2)
             result = self.backend.get_image_to_3d_session_info(session_code)
-            status = result['data']['status']
-            if status == 'preview_done':
+            status = result['data']['session_status']
+            if verbose:
+                percent_done = result['data'].get('percent_done', 'N/A')
+                print(f'[INFO] {session_code}: status="{status}", progress={percent_done}%')
+
+            if status == 'complete':
                 break
-            elif status == 'preview_failed':
+            elif status == 'failed':
                 raise RuntimeError(f"Error: {step_label} failed.")
+
+            # TODO: check remaining status values?
+            #assert status in ['queued', 'in_progress']
+
             run_time = time.time() - start_time
             if run_time >= timeout:
                 raise RuntimeError(f"Error: {step_label} timed out")
-            
+
         if verbose:
-            print(f'[INFO] Preview {step_label} completed in {run_time:.1f}s')
+            print(f'[INFO] {step_label} completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
         if mesh_format == 'obj':
