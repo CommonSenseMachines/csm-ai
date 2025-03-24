@@ -2,6 +2,7 @@ import os
 import time
 import warnings
 from urllib.request import urlretrieve
+from urllib.parse import urlparse
 from dataclasses import dataclass
 import requests
 import base64
@@ -382,7 +383,8 @@ class CSMClient:
 
         # download mesh file based on the requested format
         mesh_url = result['data'][f'mesh_url_{mesh_format}']
-        mesh_file = f'mesh.{mesh_format}'
+        #mesh_file = f'mesh.{mesh_format}'
+        mesh_file = os.path.basename(urlparse(mesh_url).path)
         mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
         urlretrieve(mesh_url, mesh_path)
 
