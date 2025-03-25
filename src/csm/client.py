@@ -10,9 +10,6 @@ import PIL.Image
 from io import BytesIO
 
 
-_DEFAULT_TIMEOUT = 1000  # in seconds
-
-
 class BackendClient:
     """A backend client class for raw GET/POST requests to the REST API.
 
@@ -287,7 +284,8 @@ class CSMClient:
         *,
         mesh_format='glb',
         output='./',
-        timeout=_DEFAULT_TIMEOUT,
+        timeout=1000,
+        poll_interval=5,
         verbose=None,
         **kwargs
     ) -> ImageTo3DResult:
@@ -308,6 +306,8 @@ class CSMClient:
             The directory path where output files will be saved.
         timeout : int, optional
             The maximum time (in seconds) to wait for the 3D mesh generation.
+        poll_interval : int
+            Time to wait (in seconds) between iterations while polling for a result.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to `self.verbose`.
         **kwargs : dict, optional
@@ -361,7 +361,7 @@ class CSMClient:
         start_time = time.time()
         run_time = 0.
         while True:
-            time.sleep(2)
+            time.sleep(poll_interval)
             result = self.backend.get_image_to_3d_session_info(session_code)
             status = result['data']['session_status']
             percent_done = result['data'].get('percent_done', 'N/A')
@@ -398,7 +398,8 @@ class CSMClient:
             guidance=6,
             mesh_format='glb',
             output='./',
-            timeout=_DEFAULT_TIMEOUT,
+            timeout=1000,
+            poll_interval=5,
             verbose=None,
             **kwargs
         ) -> TextTo3DResult:
@@ -422,7 +423,8 @@ class CSMClient:
             will be saved. Defaults to the current directory.
         timeout : int, optional
             The maximum time (in seconds) to wait for the 3D mesh generation. 
-            Defaults to 200 seconds.
+        poll_interval : int
+            Time to wait (in seconds) between iterations while polling for a result.
         verbose : bool, optional
             If True, outputs detailed progress information. Defaults to `self.verbose`.
         **kwargs : dict, optional
@@ -466,7 +468,7 @@ class CSMClient:
         start_time = time.time()
         run_time = 0.
         while True:
-            time.sleep(2)
+            time.sleep(poll_interval)
             result = self.backend.get_text_to_image_session_info(session_code)
             status = result['data']['status']
             if status == 'completed':
@@ -492,6 +494,7 @@ class CSMClient:
             mesh_format=mesh_format,
             output=output,
             timeout=timeout,
+            poll_interval=poll_interval,
             **kwargs
         )
 
