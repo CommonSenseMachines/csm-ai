@@ -246,7 +246,7 @@ class CSMClient:
     def _set_verbosity(self, verbose=None):
         self._verbose = self.verbose if verbose is None else verbose
 
-    def log(self, message):
+    def _log(self, message):
         if self._verbose:
             #print(f'[INFO] {message}')
             print(f'[{type(self).__name__}] {message}')
@@ -354,10 +354,10 @@ class CSMClient:
             raise RuntimeError(f"Image-to-3d session creation failed (session status='{status}')")
 
         session_code = result['data']['session_code']
-        self.log(f'Image-to-3d session created ({session_code})')
+        self._log(f'Image-to-3d session created ({session_code})')
 
         # poll session until complete
-        self.log(f'Running image-to-3d...')
+        self._log(f'Running image-to-3d...')
         start_time = time.time()
         run_time = 0.
         while True:
@@ -365,7 +365,7 @@ class CSMClient:
             result = self.backend.get_image_to_3d_session_info(session_code)
             status = result['data']['session_status']
             percent_done = result['data'].get('percent_done', 'N/A')
-            self.log(f'{session_code}: status="{status}", progress={percent_done}%')
+            self._log(f'{session_code}: status="{status}", progress={percent_done}%')
 
             if status == 'complete':
                 break
@@ -379,7 +379,7 @@ class CSMClient:
             if run_time >= timeout:
                 raise RuntimeError(f"image-to-3d timed out")
 
-        self.log(f'image-to-3d completed in {run_time:.1f}s')
+        self._log(f'image-to-3d completed in {run_time:.1f}s')
 
         # download mesh file based on the requested format
         mesh_url = result['data'][f'mesh_url_{mesh_format}']
@@ -461,10 +461,10 @@ class CSMClient:
             raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
 
         session_code = result['data']['session_code']
-        self.log(f'Text-to-image session created ({session_code})')
+        self._log(f'Text-to-image session created ({session_code})')
 
         # wait for image generation to complete
-        self.log(f'Running text-to-image...')
+        self._log(f'Running text-to-image...')
         start_time = time.time()
         run_time = 0.
         while True:
@@ -479,7 +479,7 @@ class CSMClient:
             if run_time >= timeout:
                 raise RuntimeError("text-to-image timed out")
 
-        self.log(f'text-to-image completed in {run_time:.1f}s')
+        self._log(f'text-to-image completed in {run_time:.1f}s')
 
         # access the image URL
         image_url = result['data']['image_url']
