@@ -278,6 +278,87 @@ class CSMClient:
         
         return pil_image_to_x64(pil_image)
 
+    def start_image_to_3d(
+        self,
+        image,
+        *,
+        verbose=None,
+        **kwargs
+    ) -> str:
+        """Start an image-to-3d session and return the session code.
+        """
+        self._set_verbosity(verbose)
+
+        _deprecated_args = [
+            'generate_spin_video',
+            'preview_mesh',
+            'refine_speed',
+            'preview_model',
+        ]
+        for arg in _deprecated_args:
+            if kwargs.pop(arg, None) is not None:
+                warnings.warn(
+                    f"Argument `{arg}` has been deprecated and is no longer used.",
+                    DeprecationWarning
+                )
+
+        image_url = self._handle_image_input(image)
+
+        # initialize session
+        result = self.backend.create_image_to_3d_session(
+            image_url,
+            **kwargs
+        )
+
+        status = result['data']['session_status']
+        if status == 'failed':
+            raise RuntimeError(f"Image-to-3d session creation failed (session status='{status}')")
+
+        session_code = result['data']['session_code']
+        self._log(f'Image-to-3d session created ({session_code})')
+
+        return session_code
+
+    def poll_image_to_3d(
+        self,
+        session_code,
+        *,
+        timeout=1000,
+        poll_interval=5,
+        verbose=None,
+    ) -> dict:
+        """Poll an image-to-3d session and return the result when it arrives.
+        """
+        self._set_verbosity(verbose)
+
+        self._log(f'Running image-to-3d...')
+
+        # poll session until complete
+        start_time = time.time()
+        run_time = 0.
+        while run_time < timeout:
+            # Get latest session info
+            result = self.backend.get_image_to_3d_session_info(session_code)
+            status = result['data']['session_status']
+            percent_done = result['data'].get('percent_done', 'N/A')
+            self._log(f'{session_code}: status="{status}", progress={percent_done}%')
+
+            if status == 'complete':
+                self._log(f'image-to-3d completed in {run_time:.1f}s')
+                return result
+
+            elif status == 'failed':
+                raise RuntimeError(f"image-to-3d failed.")
+
+            # TODO: check remaining status values?
+            #assert status in ['queued', 'in_progress']
+
+            # Wait `poll_interval` seconds and repeat
+            time.sleep(poll_interval)
+            run_time = time.time() - start_time
+
+        raise TimeoutError(f"image-to-3d timed out")
+
     def image_to_3d(
         self,
         image,
@@ -322,15 +403,6 @@ class CSMClient:
         """
         self._set_verbosity(verbose)
 
-        if kwargs.pop('generate_spin_video', None) is not None:
-            warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
-        if kwargs.pop('preview_mesh', None) is not None:
-            warnings.warn("The option for `preview_mesh` has been deprecated and has been removed.", DeprecationWarning)
-        if kwargs.pop('refine_speed', None) is not None:
-            warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
-        if kwargs.pop('preview_model', None) is not None:
-            warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
-
         mesh_format = mesh_format.lower()
         allowed_formats = ['obj', 'zip', 'glb', 'fbx', 'usdz']
         if mesh_format not in allowed_formats:
@@ -339,47 +411,21 @@ class CSMClient:
                 f"from options {allowed_formats}."
             )
 
-        image_url = self._handle_image_input(image)
-
-        os.makedirs(output, exist_ok=True)
-
-        # initialize session
-        result = self.backend.create_image_to_3d_session(
-            image_url,
+        session_code = self.start_image_to_3d(
+            image,
+            verbose=verbose,
             **kwargs
         )
 
-        status = result['data']['session_status']
-        if status == 'failed':
-            raise RuntimeError(f"Image-to-3d session creation failed (session status='{status}')")
+        result = self.poll_image_to_3d(
+            session_code,
+            timeout=timeout,
+            poll_interval=poll_interval,
+            verbose=verbose,
+        )
 
-        session_code = result['data']['session_code']
-        self._log(f'Image-to-3d session created ({session_code})')
-
-        # poll session until complete
-        self._log(f'Running image-to-3d...')
-        start_time = time.time()
-        run_time = 0.
-        while True:
-            time.sleep(poll_interval)
-            result = self.backend.get_image_to_3d_session_info(session_code)
-            status = result['data']['session_status']
-            percent_done = result['data'].get('percent_done', 'N/A')
-            self._log(f'{session_code}: status="{status}", progress={percent_done}%')
-
-            if status == 'complete':
-                break
-            elif status == 'failed':
-                raise RuntimeError(f"image-to-3d failed.")
-
-            # TODO: check remaining status values?
-            #assert status in ['queued', 'in_progress']
-
-            run_time = time.time() - start_time
-            if run_time >= timeout:
-                raise RuntimeError(f"image-to-3d timed out")
-
-        self._log(f'image-to-3d completed in {run_time:.1f}s')
+        # initialize output directory
+        os.makedirs(output, exist_ok=True)
 
         # download mesh file based on the requested format
         mesh_url = result['data'][f'mesh_url_{mesh_format}']
@@ -389,6 +435,70 @@ class CSMClient:
         urlretrieve(mesh_url, mesh_path)
 
         return ImageTo3DResult(session_code=session_code, mesh_path=mesh_path)
+
+    def start_text_to_image(
+            self,
+            prompt,
+            *,
+            style_id="",
+            guidance=6,
+            verbose=None,
+        ) -> str:
+        """Start a text-to-image session and return the session code.
+        """
+        self._set_verbosity(verbose)
+
+        # initialize text-to-image session
+        result = self.backend.create_text_to_image_session(
+            prompt,
+            style_id=style_id,
+            guidance=guidance,
+        )
+
+        status = result['data']['status']
+        if status != "processing" and status != "completed":
+            raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
+
+        session_code = result['data']['session_code']
+        self._log(f'Text-to-image session created ({session_code})')
+
+        return session_code
+
+    def poll_text_to_image(
+            self,
+            session_code,
+            *,
+            timeout=1000,
+            poll_interval=5,
+            verbose=None,
+        ) -> dict:
+        """Poll a text-to-image session and return the result when it arrives.
+        """
+        self._set_verbosity(verbose)
+
+        self._log(f'Running text-to-image...')
+
+        # poll session until complete
+        start_time = time.time()
+        run_time = 0.
+        while run_time < timeout:
+            # Get latest session info
+            result = self.backend.get_text_to_image_session_info(session_code)
+            status = result['data']['status']
+
+            if status == 'completed':
+                self._log(f'text-to-image completed in {run_time:.1f}s')
+                return result
+
+            elif status != 'processing':
+                raise RuntimeError(
+                    f"Unexpected error during text-to-image generation (status='{status}')")
+
+            # Wait `poll_interval` seconds and repeat
+            time.sleep(poll_interval)
+            run_time = time.time() - start_time
+
+        raise RuntimeError("text-to-image timed out")
 
     def text_to_3d(
             self,
@@ -440,46 +550,22 @@ class CSMClient:
         """
         self._set_verbosity(verbose)
 
-        if kwargs.pop('generate_spin_video', None) is not None:
-            warnings.warn("The option for `generate_spin_video` has been deprecated and has been removed.", DeprecationWarning)
-        if kwargs.pop('refine_speed', None) is not None:
-            warnings.warn("The option for `refine_speed` has been deprecated and has been removed.", DeprecationWarning)
-        if kwargs.pop('preview_model', None) is not None:
-            warnings.warn("The option for `preview_model` has been deprecated and has been removed.", DeprecationWarning)
-
-        os.makedirs(output, exist_ok=True)
-
-        # initialize text-to-image session
-        result = self.backend.create_text_to_image_session(
+        session_code = self.start_text_to_image(
             prompt,
             style_id=style_id,
             guidance=guidance,
+            verbose=verbose,
         )
 
-        status = result['data']['status']
-        if status != "processing" and status != "completed":
-            raise RuntimeError(f"Text-to-image session creation failed (status='{status}')")
+        result = self.poll_text_to_image(
+            session_code,
+            timeout=timeout,
+            poll_interval=poll_interval,
+            verbose=verbose,
+        )
 
-        session_code = result['data']['session_code']
-        self._log(f'Text-to-image session created ({session_code})')
-
-        # wait for image generation to complete
-        self._log(f'Running text-to-image...')
-        start_time = time.time()
-        run_time = 0.
-        while True:
-            time.sleep(poll_interval)
-            result = self.backend.get_text_to_image_session_info(session_code)
-            status = result['data']['status']
-            if status == 'completed':
-                break
-            elif status != 'processing':
-                raise RuntimeError(f"Unexpected error during text-to-image generation (status='{status}')")
-            run_time = time.time() - start_time
-            if run_time >= timeout:
-                raise RuntimeError("text-to-image timed out")
-
-        self._log(f'text-to-image completed in {run_time:.1f}s')
+        # initialize output directory
+        os.makedirs(output, exist_ok=True)
 
         # access the image URL
         image_url = result['data']['image_url']
