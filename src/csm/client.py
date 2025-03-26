@@ -200,6 +200,21 @@ class ImageTo3DResult:
 
 
 @dataclass
+class TextToImageResult:
+    """Output class for text-to-3d generation.
+
+    Parameters
+    ----------
+    session_code : str
+        The text-to-image session code.
+    image_path : str
+        Local path of the generated image.
+    """
+    session_code: str
+    image_path: str
+
+
+@dataclass
 class TextTo3DResult:
     """Output class for text-to-3d generation.
 
@@ -323,10 +338,12 @@ class CSMClient:
         self,
         session_code,
         *,
+        mesh_format='glb',
+        output='./',
         timeout=1000,
         poll_interval=5,
         verbose=None,
-    ) -> dict:
+    ) -> ImageTo3DResult:
         """Poll an image-to-3d session and return the result when it arrives.
         """
         self._set_verbosity(verbose)
@@ -345,7 +362,7 @@ class CSMClient:
 
             if status == 'complete':
                 self._log(f'image-to-3d completed in {run_time:.1f}s')
-                return result
+                break
 
             elif status == 'failed':
                 raise RuntimeError(f"image-to-3d failed.")
@@ -357,7 +374,34 @@ class CSMClient:
             time.sleep(poll_interval)
             run_time = time.time() - start_time
 
-        raise TimeoutError(f"image-to-3d timed out")
+        else:
+            raise TimeoutError(f"image-to-3d timed out")
+
+        # initialize output directory
+        os.makedirs(output, exist_ok=True)
+
+        # check mesh format
+        mesh_format = mesh_format.lower()
+        allowed_formats = ['obj', 'zip', 'glb', 'fbx', 'usdz']
+        if mesh_format not in allowed_formats:
+            raise ValueError(
+                f"Unexpected mesh_format value ('{mesh_format}'). Please choose "
+                f"from options {allowed_formats}."
+            )
+
+        # download mesh file based on the requested format
+        mesh_url = result['data'][f'mesh_url_{mesh_format}']
+        #mesh_file = f'mesh.{mesh_format}'
+        mesh_file = os.path.basename(urlparse(mesh_url).path)
+        mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
+        urlretrieve(mesh_url, mesh_path)
+
+        i23_result = ImageTo3DResult(
+            session_code=session_code,
+            mesh_path=mesh_path,
+        )
+
+        return i23_result
 
     def image_to_3d(
         self,
@@ -403,38 +447,22 @@ class CSMClient:
         """
         self._set_verbosity(verbose)
 
-        mesh_format = mesh_format.lower()
-        allowed_formats = ['obj', 'zip', 'glb', 'fbx', 'usdz']
-        if mesh_format not in allowed_formats:
-            raise ValueError(
-                f"Unexpected mesh_format value ('{mesh_format}'). Please choose "
-                f"from options {allowed_formats}."
-            )
-
         session_code = self.start_image_to_3d(
             image,
             verbose=verbose,
             **kwargs
         )
 
-        result = self.poll_image_to_3d(
+        i23_result = self.poll_image_to_3d(
             session_code,
+            mesh_format=mesh_format,
+            output=output,
             timeout=timeout,
             poll_interval=poll_interval,
             verbose=verbose,
         )
 
-        # initialize output directory
-        os.makedirs(output, exist_ok=True)
-
-        # download mesh file based on the requested format
-        mesh_url = result['data'][f'mesh_url_{mesh_format}']
-        #mesh_file = f'mesh.{mesh_format}'
-        mesh_file = os.path.basename(urlparse(mesh_url).path)
-        mesh_path = os.path.join(output, mesh_file)  # TODO: os.path.abspath ?
-        urlretrieve(mesh_url, mesh_path)
-
-        return ImageTo3DResult(session_code=session_code, mesh_path=mesh_path)
+        return i23_result
 
     def start_text_to_image(
             self,
@@ -468,10 +496,11 @@ class CSMClient:
             self,
             session_code,
             *,
+            output='./',
             timeout=1000,
             poll_interval=5,
             verbose=None,
-        ) -> dict:
+        ) -> TextToImageResult:
         """Poll a text-to-image session and return the result when it arrives.
         """
         self._set_verbosity(verbose)
@@ -488,7 +517,7 @@ class CSMClient:
 
             if status == 'completed':
                 self._log(f'text-to-image completed in {run_time:.1f}s')
-                return result
+                break
 
             elif status != 'processing':
                 raise RuntimeError(
@@ -498,7 +527,22 @@ class CSMClient:
             time.sleep(poll_interval)
             run_time = time.time() - start_time
 
-        raise RuntimeError("text-to-image timed out")
+        else:
+            raise TimeoutError("text-to-image timed out")
+
+        # access the image URL
+        image_url = result['data']['image_url']
+
+        # download image
+        image_path = os.path.join(output, 'image.png')
+        urlretrieve(image_url, image_path)
+
+        t2i_result = TextToImageResult(
+            session_code=session_code,
+            image_path=image_path,
+        )
+
+        return t2i_result
 
     def text_to_3d(
             self,
@@ -557,26 +601,18 @@ class CSMClient:
             verbose=verbose,
         )
 
-        result = self.poll_text_to_image(
+        t2i_result = self.poll_text_to_image(
             session_code,
+            output=output,
             timeout=timeout,
             poll_interval=poll_interval,
             verbose=verbose,
         )
-
-        # initialize output directory
-        os.makedirs(output, exist_ok=True)
-
-        # access the image URL
-        image_url = result['data']['image_url']
-
-        # download image
-        image_path = os.path.join(output, 'image.png')
-        urlretrieve(image_url, image_path)
+        image_path = t2i_result.image_path
 
         # launch image-to-3d
-        i23 = self.image_to_3d(
-            image_url,
+        i23_result = self.image_to_3d(
+            image_path,
             mesh_format=mesh_format,
             output=output,
             timeout=timeout,
@@ -584,7 +620,13 @@ class CSMClient:
             **kwargs
         )
 
-        return TextTo3DResult(session_code=i23.session_code, mesh_path=i23.mesh_path, image_path=image_path)
+        t23_result = TextTo3DResult(
+            session_code=i23_result.session_code,
+            mesh_path=i23_result.mesh_path,
+            image_path=image_path,
+        )
+
+        return t23_result
 
 
 def pil_image_to_x64(image: PIL.Image.Image) -> str:
