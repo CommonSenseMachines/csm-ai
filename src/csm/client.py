@@ -301,6 +301,23 @@ class CSMClient:
         **kwargs
     ) -> str:
         """Start an image-to-3d session and return the session code.
+
+        Parameters
+        ----------
+        image : str or PIL.Image.Image
+            The input image. May be provided as a URL, a local file path, or a
+            :class:`PIL.Image.Image` instance.
+        verbose : bool, optional
+            If True, outputs detailed progress information. Defaults to `self.verbose`.
+        **kwargs : dict, optional
+            Additional parameters for customizing the image-to-3D process.
+            For a complete list of supported options, see the REST API documentation:
+            `Session Parameters <https://docs.csm.ai/image-to-3d/create-session>`_.
+
+        Returns
+        -------
+        str
+            The image-to-3d session code.
         """
         self._set_verbosity(verbose)
 
@@ -345,6 +362,27 @@ class CSMClient:
         verbose=None,
     ) -> ImageTo3DResult:
         """Poll an image-to-3d session and return the result when it arrives.
+
+        Parameters
+        ----------
+        session_code : str
+            The image-to-3d session code.
+        mesh_format : str, optional
+            The format of the output 3D mesh file. Choices are ['obj', 'glb', 'fbx', 'usdz'].
+            Defaults to 'glb'.
+        output : str, optional
+            The directory path where output files will be saved.
+        timeout : int, optional
+            The maximum time (in seconds) to wait for the 3D mesh generation.
+        poll_interval : int
+            Time to wait (in seconds) between iterations while polling for a result.
+        verbose : bool, optional
+            If True, outputs detailed progress information. Defaults to `self.verbose`.
+
+        Returns
+        -------
+        ImageTo3DResult
+            Result object containing the local path of the generated mesh file and session code.
         """
         self._set_verbosity(verbose)
 
@@ -473,6 +511,24 @@ class CSMClient:
             verbose=None,
         ) -> str:
         """Start a text-to-image session and return the session code.
+
+        Parameters
+        ----------
+        prompt : str
+            The input text prompt to generate an image based on text description.
+        style_id : str, optional
+            The style ID that influences the visual characteristics of the generated model.
+            Defaults to an empty string, meaning no specific style is applied.
+        guidance : int, optional
+            A parameter that adjusts guidance strength, affecting how closely
+            the generation follows the input text. Default is 6.
+        verbose : bool, optional
+            If True, outputs detailed progress information. Defaults to `self.verbose`.
+
+        Returns
+        -------
+        str
+            The text-to-image session code.
         """
         self._set_verbosity(verbose)
 
@@ -502,6 +558,25 @@ class CSMClient:
             verbose=None,
         ) -> TextToImageResult:
         """Poll a text-to-image session and return the result when it arrives.
+
+        Parameters
+        ----------
+        session_code : str
+            The text-to-image session code.
+        output : str, optional
+            The directory path where output files will be saved. Defaults to
+            the current directory.
+        timeout : int, optional
+            The maximum time (in seconds) to wait for the 3D mesh generation.
+        poll_interval : int
+            Time to wait (in seconds) between iterations while polling for a result.
+        verbose : bool, optional
+            If True, outputs detailed progress information. Defaults to `self.verbose`.
+
+        Returns
+        -------
+        TextToImageResult
+            Result object containing the local path of the generated image and session code.
         """
         self._set_verbosity(verbose)
 
