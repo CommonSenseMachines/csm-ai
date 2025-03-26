@@ -1,2 +1,8 @@
 from .version import __version__
-from .client import CSMClient, BackendClient, ImageTo3DResult, TextTo3DResult
+from .client import (
+    BackendClient,
+    CSMClient,
+    ImageTo3DResult,
+    TextTo3DResult,
+    TextToImageResult,
+)
