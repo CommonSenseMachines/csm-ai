@@ -190,13 +190,16 @@ class ImageTo3DResult:
 
     Parameters
     ----------
-    session_code : str
-        The image-to-3d session code.
     mesh_path : str
         Local path of the generated mesh file.
+    session_code : str
+        The image-to-3d session code.
+    session_data : dict
+        Full image-to-3d session data returned by the REST API
     """
-    session_code: str
     mesh_path: str
+    session_code: str
+    session_data: dict
 
 
 @dataclass
@@ -205,13 +208,16 @@ class TextToImageResult:
 
     Parameters
     ----------
-    session_code : str
-        The text-to-image session code.
     image_path : str
         Local path of the generated image.
+    session_code : str
+        The text-to-image session code.
+    session_data : dict
+        Full text-to-image session data returned by the REST API
     """
-    session_code: str
     image_path: str
+    session_code: str
+    session_data: dict
 
 
 @dataclass
@@ -220,16 +226,19 @@ class TextTo3DResult:
 
     Parameters
     ----------
-    session_code : str
-        The image-to-3d session code.
     mesh_path : str
         Local path of the generated mesh file.
     image_path : str
         Local path of the image generated as part of text-to-3d.
+    session_code : str
+        The image-to-3d session code.
+    session_data : dict
+        Full image-to-3d session data returned by the REST API
     """
-    session_code: str
     mesh_path: str
     image_path: str
+    session_code: str
+    session_data: dict
 
 
 class CSMClient:
@@ -435,8 +444,9 @@ class CSMClient:
         urlretrieve(mesh_url, mesh_path)
 
         i23_result = ImageTo3DResult(
-            session_code=session_code,
             mesh_path=mesh_path,
+            session_code=session_code,
+            session_data=result['data'],
         )
 
         return i23_result
@@ -613,8 +623,9 @@ class CSMClient:
         urlretrieve(image_url, image_path)
 
         t2i_result = TextToImageResult(
-            session_code=session_code,
             image_path=image_path,
+            session_code=session_code,
+            session_data=result['data'],
         )
 
         return t2i_result
@@ -696,9 +707,10 @@ class CSMClient:
         )
 
         t23_result = TextTo3DResult(
-            session_code=i23_result.session_code,
             mesh_path=i23_result.mesh_path,
             image_path=image_path,
+            session_code=i23_result.session_code,
+            session_data=i23_result.session_data,
         )
 
         return t23_result
