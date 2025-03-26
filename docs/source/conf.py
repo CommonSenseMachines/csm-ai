@@ -65,6 +65,8 @@ autodoc_default_options = {
     #'show-inheritance': True,
 }
 
+autodoc_member_order = 'bysource'
+
 # Automatically generate the documentation for all submodules
 autosummary_generate = True
 
