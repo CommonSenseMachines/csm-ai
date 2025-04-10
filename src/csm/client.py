@@ -92,7 +92,6 @@ class BackendClient:
 
         parameters = {
             "image_url": image_url,
-            "manual_segmentation": False,  # TODO: implement this option
             **kwargs
         }
 
