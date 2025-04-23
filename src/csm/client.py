@@ -34,7 +34,6 @@ class BackendClient:
             headers: dict = None,
             base_url="https://api.csm.ai",
         ) -> None:
-        print(headers)
         if api_key is None and headers is None:
             api_key = os.environ.get('CSM_API_KEY')
             if api_key is None:
