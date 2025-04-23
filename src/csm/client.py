@@ -31,7 +31,7 @@ class BackendClient:
     def __init__(
             self,
             api_key=None,
-            headers:dict=None,
+            headers: dict = None,
             base_url="https://api.csm.ai",
         ) -> None:
         if api_key is None and (headers is None or 'bearer_token' not in headers):
@@ -271,7 +271,7 @@ class CSMClient:
     def __init__(
             self,
             api_key=None,
-            headers: dict=None,
+            headers: dict = None,
             base_url="https://api.csm.ai",
             verbose=True,
         ) -> None:
