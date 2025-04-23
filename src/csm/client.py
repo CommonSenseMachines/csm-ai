@@ -22,6 +22,8 @@ class BackendClient:
     api_key : str, optional
         API key for the CSM account you would like to use. If not provided,
         the environment variable :envvar:`CSM_API_KEY` is used instead.
+    headers : dict, optional
+        Includes additional variables like bearer tokens etc for authentication.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -29,10 +31,10 @@ class BackendClient:
     def __init__(
             self,
             api_key=None,
-            bearer_token=None,
+            headers:dict=None,
             base_url="https://api.csm.ai",
         ) -> None:
-        if api_key is None and bearer_token is None:
+        if api_key is None and (headers is None or 'bearer_token' not in headers):
             api_key = os.environ.get('CSM_API_KEY')
             if api_key is None:
                 raise Exception(
@@ -41,21 +43,21 @@ class BackendClient:
                 )
         self.api_key = api_key
         self.base_url = base_url
-        self.bearer_token = bearer_token
+        self._headers = headers or {}
 
     @property
     def headers(self):
         """Constructs and returns the HTTP headers required for API requests."""
-        if self.bearer_token is not None:
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {self.bearer_token}',
-            }
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        
+        if 'bearer_token' in self._headers:
+            headers['Authorization'] = f'Bearer {self._headers["bearer_token"]}'
         else:
-            return {
-                'Content-Type': 'application/json',
-                'x-api-key': self.api_key,
-            }
+            headers['x-api-key'] = self.api_key
+            
+        return headers
 
     def _check_http_response(self, response: requests.Response) -> None:
         """Validates the HTTP response for successful status codes.
@@ -256,8 +258,8 @@ class CSMClient:
     api_key : str, optional
         API key for the CSM account you would like to use. If not provided,
         the environment variable :envvar:`CSM_API_KEY` is used instead.
-    bearer_token : str, optional
-        Bearer token for the CSM account you would like to use. 
+    headers : dict, optional
+        Additional headers to include in the API requests.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -269,11 +271,11 @@ class CSMClient:
     def __init__(
             self,
             api_key=None,
-            bearer_token=None,
+            headers: dict=None,
             base_url="https://api.csm.ai",
             verbose=True,
         ) -> None:
-        self.backend = BackendClient(api_key=api_key, bearer_token=bearer_token, base_url=base_url)
+        self.backend = BackendClient(api_key=api_key, headers=headers, base_url=base_url)
         self.verbose = verbose
         self._set_verbosity()
 
