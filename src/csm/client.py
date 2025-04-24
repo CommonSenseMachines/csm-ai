@@ -34,7 +34,7 @@ class BackendClient:
             headers: dict = None,
             base_url="https://api.csm.ai",
         ) -> None:
-        if api_key is None and headers is None:
+        if api_key is None and (headers is None or not headers.get('Authorization')):
             api_key = os.environ.get('CSM_API_KEY')
             if api_key is None:
                 raise Exception(
@@ -51,8 +51,7 @@ class BackendClient:
         headers = {
             'Content-Type': 'application/json',
         }
-        
-        if 'Authorization' in self._headers:
+        if self._headers: 
             headers.update(self._headers)
         else:
             headers['x-api-key'] = self.api_key
