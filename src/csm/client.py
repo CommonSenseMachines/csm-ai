@@ -22,6 +22,8 @@ class BackendClient:
     api_key : str, optional
         API key for the CSM account you would like to use. If not provided,
         the environment variable :envvar:`CSM_API_KEY` is used instead.
+    headers : dict, optional
+        Includes additional variables like bearer tokens etc for authentication.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -29,9 +31,10 @@ class BackendClient:
     def __init__(
             self,
             api_key=None,
+            headers: dict = None,
             base_url="https://api.csm.ai",
         ) -> None:
-        if api_key is None:
+        if api_key is None and (headers is None or not headers.get('Authorization')):
             api_key = os.environ.get('CSM_API_KEY')
             if api_key is None:
                 raise Exception(
@@ -40,14 +43,20 @@ class BackendClient:
                 )
         self.api_key = api_key
         self.base_url = base_url
+        self._headers = headers or {}
 
     @property
     def headers(self):
         """Constructs and returns the HTTP headers required for API requests."""
-        return {
+        headers = {
             'Content-Type': 'application/json',
-            'x-api-key': self.api_key,
         }
+        if self._headers: 
+            headers.update(self._headers)
+        else:
+            headers['x-api-key'] = self.api_key
+            
+        return headers
 
     def _check_http_response(self, response: requests.Response) -> None:
         """Validates the HTTP response for successful status codes.
@@ -248,6 +257,8 @@ class CSMClient:
     api_key : str, optional
         API key for the CSM account you would like to use. If not provided,
         the environment variable :envvar:`CSM_API_KEY` is used instead.
+    headers : dict, optional
+        Additional headers to include in the API requests.
     base_url : str
         Base url for the API. In general this should not be modified; it is 
         included only for debugging purposes.
@@ -259,10 +270,11 @@ class CSMClient:
     def __init__(
             self,
             api_key=None,
+            headers: dict = None,
             base_url="https://api.csm.ai",
             verbose=True,
         ) -> None:
-        self.backend = BackendClient(api_key=api_key, base_url=base_url)
+        self.backend = BackendClient(api_key=api_key, headers=headers, base_url=base_url)
         self.verbose = verbose
         self._set_verbosity()
 
